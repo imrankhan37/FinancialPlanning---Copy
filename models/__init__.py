@@ -47,7 +47,24 @@ from .unified_helpers import (
     create_unified_expense_breakdown,
     create_unified_tax_breakdown,
     create_unified_investment_breakdown,
-    create_unified_net_worth_breakdown
+    create_unified_net_worth_breakdown,
+    get_performance_metrics,
+    clear_performance_caches
+)
+
+# Performance optimizations
+from .performance_optimizations import (
+    CurrencyConversionCache,
+    CacheStrategy,
+    CacheEntry,
+    DataAccessOptimizer,
+    PerformanceMonitor,
+    cached_currency_conversion,
+    optimized_currency_conversion,
+    optimize_currency_value_creation,
+    optimize_scenario_analysis,
+    get_performance_summary,
+    clear_all_caches
 )
 
 __all__ = [
@@ -92,5 +109,20 @@ __all__ = [
     'create_unified_expense_breakdown',
     'create_unified_tax_breakdown',
     'create_unified_investment_breakdown',
-    'create_unified_net_worth_breakdown'
+    'create_unified_net_worth_breakdown',
+    'get_performance_metrics',
+    'clear_performance_caches',
+    
+    # Performance optimizations
+    'CurrencyConversionCache',
+    'CacheStrategy',
+    'CacheEntry',
+    'DataAccessOptimizer',
+    'PerformanceMonitor',
+    'cached_currency_conversion',
+    'optimized_currency_conversion',
+    'optimize_currency_value_creation',
+    'optimize_scenario_analysis',
+    'get_performance_summary',
+    'clear_all_caches'
 ] 

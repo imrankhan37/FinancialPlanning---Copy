@@ -12,6 +12,12 @@ from .unified_financial_data import (
     HousingExpenses, LivingExpenses, TaxExpenses, InvestmentExpenses, OtherExpenses,
     RetirementInvestments, TaxableInvestments, HousingInvestments
 )
+from .performance_optimizations import (
+    optimize_currency_value_creation,
+    optimize_scenario_analysis,
+    get_performance_summary,
+    clear_all_caches
+)
 
 
 def convert_old_to_unified_data_point(old_point: OldFinancialDataPoint) -> UnifiedFinancialData:
@@ -21,50 +27,50 @@ def convert_old_to_unified_data_point(old_point: OldFinancialDataPoint) -> Unifi
     phase = FinancialPhase.UK_ONLY if old_point.phase.value == "UK" else FinancialPhase.INTERNATIONAL_ONLY
     jurisdiction = Jurisdiction.UK if old_point.phase.value == "UK" else Jurisdiction.US  # Default to US for international
     
-    # Create income breakdown
+    # Create income breakdown with optimized currency conversion
     income = IncomeBreakdown(
-        salary=CurrencyValue.from_gbp(old_point.gross_salary_gbp_equiv or 0.0),
-        bonus=CurrencyValue.from_gbp(old_point.gross_bonus_gbp_equiv or 0.0),
-        rsu_vested=CurrencyValue.from_gbp(old_point.vested_rsu_gbp_equiv or 0.0),
-        other_income=CurrencyValue.from_gbp(0.0)  # Not available in old model
+        salary=optimize_currency_value_creation(old_point.gross_salary_gbp_equiv or 0.0, Currency.GBP),
+        bonus=optimize_currency_value_creation(old_point.gross_bonus_gbp_equiv or 0.0, Currency.GBP),
+        rsu_vested=optimize_currency_value_creation(old_point.vested_rsu_gbp_equiv or 0.0, Currency.GBP),
+        other_income=optimize_currency_value_creation(0.0, Currency.GBP)  # Not available in old model
     )
     
-    # Create expense breakdown
+    # Create expense breakdown with optimized currency conversion
     housing = HousingExpenses(
-        rent=CurrencyValue.from_gbp(old_point.rent_gbp or 0.0),
-        mortgage=CurrencyValue.from_gbp(old_point.mortgage_payment_gbp or 0.0),
-        utilities=CurrencyValue.from_gbp(0.0),  # Not available in old model
-        maintenance=CurrencyValue.from_gbp(0.0),  # Not available in old model
-        property_tax=CurrencyValue.from_gbp(0.0)  # Not available in old model
+        rent=optimize_currency_value_creation(old_point.rent_gbp or 0.0, Currency.GBP),
+        mortgage=optimize_currency_value_creation(old_point.mortgage_payment_gbp or 0.0, Currency.GBP),
+        utilities=optimize_currency_value_creation(0.0, Currency.GBP),  # Not available in old model
+        maintenance=optimize_currency_value_creation(0.0, Currency.GBP),  # Not available in old model
+        property_tax=optimize_currency_value_creation(0.0, Currency.GBP)  # Not available in old model
     )
     
     living = LivingExpenses(
-        food=CurrencyValue.from_gbp(old_point.personal_expenses_gbp or 0.0),
-        transport=CurrencyValue.from_gbp(old_point.travel_expenses_gbp or 0.0),
-        healthcare=CurrencyValue.from_gbp(0.0),  # Not available in old model
-        entertainment=CurrencyValue.from_gbp(0.0),  # Not available in old model
-        clothing=CurrencyValue.from_gbp(0.0),  # Not available in old model
-        personal_care=CurrencyValue.from_gbp(0.0)  # Not available in old model
+        food=optimize_currency_value_creation(old_point.personal_expenses_gbp or 0.0, Currency.GBP),
+        transport=optimize_currency_value_creation(old_point.travel_expenses_gbp or 0.0, Currency.GBP),
+        healthcare=optimize_currency_value_creation(0.0, Currency.GBP),  # Not available in old model
+        entertainment=optimize_currency_value_creation(0.0, Currency.GBP),  # Not available in old model
+        clothing=optimize_currency_value_creation(0.0, Currency.GBP),  # Not available in old model
+        personal_care=optimize_currency_value_creation(0.0, Currency.GBP)  # Not available in old model
     )
     
     taxes = TaxExpenses(
-        income_tax=CurrencyValue.from_gbp(old_point.income_tax_gbp or 0.0),
-        social_security=CurrencyValue.from_gbp(old_point.national_insurance_gbp or 0.0),
-        property_tax=CurrencyValue.from_gbp(0.0),  # Not available in old model
-        other_taxes=CurrencyValue.from_gbp(0.0)  # Not available in old model
+        income_tax=optimize_currency_value_creation(old_point.income_tax_gbp or 0.0, Currency.GBP),
+        social_security=optimize_currency_value_creation(old_point.national_insurance_gbp or 0.0, Currency.GBP),
+        property_tax=optimize_currency_value_creation(0.0, Currency.GBP),  # Not available in old model
+        other_taxes=optimize_currency_value_creation(0.0, Currency.GBP)  # Not available in old model
     )
     
     investments = InvestmentExpenses(
-        retirement_contributions=CurrencyValue.from_gbp(0.0),  # Not available in old model
-        investment_fees=CurrencyValue.from_gbp(0.0),  # Not available in old model
-        insurance=CurrencyValue.from_gbp(0.0)  # Not available in old model
+        retirement_contributions=optimize_currency_value_creation(0.0, Currency.GBP),  # Not available in old model
+        investment_fees=optimize_currency_value_creation(0.0, Currency.GBP),  # Not available in old model
+        insurance=optimize_currency_value_creation(0.0, Currency.GBP)  # Not available in old model
     )
     
     other = OtherExpenses(
-        education=CurrencyValue.from_gbp(old_point.university_repayment_gbp or 0.0),
-        travel=CurrencyValue.from_gbp(old_point.travel_expenses_gbp or 0.0),
-        gifts=CurrencyValue.from_gbp(0.0),  # Not available in old model
-        miscellaneous=CurrencyValue.from_gbp(0.0)  # Not available in old model
+        education=optimize_currency_value_creation(old_point.university_repayment_gbp or 0.0, Currency.GBP),
+        travel=optimize_currency_value_creation(old_point.travel_expenses_gbp or 0.0, Currency.GBP),
+        gifts=optimize_currency_value_creation(0.0, Currency.GBP),  # Not available in old model
+        miscellaneous=optimize_currency_value_creation(0.0, Currency.GBP)  # Not available in old model
     )
     
     expenses = ExpenseBreakdown(
@@ -75,32 +81,32 @@ def convert_old_to_unified_data_point(old_point: OldFinancialDataPoint) -> Unifi
         other=other
     )
     
-    # Create tax breakdown
+    # Create tax breakdown with optimized currency conversion
     tax = TaxBreakdown(
-        income_tax=CurrencyValue.from_gbp(old_point.income_tax_gbp or 0.0),
-        social_security=CurrencyValue.from_gbp(old_point.national_insurance_gbp or 0.0),
-        other_taxes=CurrencyValue.from_gbp(0.0)  # Not available in old model
+        income_tax=optimize_currency_value_creation(old_point.income_tax_gbp or 0.0, Currency.GBP),
+        social_security=optimize_currency_value_creation(old_point.national_insurance_gbp or 0.0, Currency.GBP),
+        other_taxes=optimize_currency_value_creation(0.0, Currency.GBP)  # Not available in old model
     )
     
-    # Create investment breakdown
+    # Create investment breakdown with optimized currency conversion
     retirement = RetirementInvestments(
-        pension=CurrencyValue.from_gbp(0.0),  # Not available in old model
-        lisa=CurrencyValue.from_gbp(old_point.lisa_contribution_gbp or 0.0),
-        sipp=CurrencyValue.from_gbp(old_point.sipp_contribution_gbp or 0.0),
-        ira=CurrencyValue.from_gbp(0.0),  # Not available in old model
-        employer_match=CurrencyValue.from_gbp(0.0)  # Not available in old model
+        pension=optimize_currency_value_creation(0.0, Currency.GBP),  # Not available in old model
+        lisa=optimize_currency_value_creation(old_point.lisa_contribution_gbp or 0.0, Currency.GBP),
+        sipp=optimize_currency_value_creation(old_point.sipp_contribution_gbp or 0.0, Currency.GBP),
+        ira=optimize_currency_value_creation(0.0, Currency.GBP),  # Not available in old model
+        employer_match=optimize_currency_value_creation(0.0, Currency.GBP)  # Not available in old model
     )
     
     taxable = TaxableInvestments(
-        isa=CurrencyValue.from_gbp(old_point.isa_contribution_gbp or 0.0),
-        gia=CurrencyValue.from_gbp(old_point.gia_contribution_gbp or 0.0),
-        brokerage=CurrencyValue.from_gbp(0.0),  # Not available in old model
-        crypto=CurrencyValue.from_gbp(0.0)  # Not available in old model
+        isa=optimize_currency_value_creation(old_point.isa_contribution_gbp or 0.0, Currency.GBP),
+        gia=optimize_currency_value_creation(old_point.gia_contribution_gbp or 0.0, Currency.GBP),
+        brokerage=optimize_currency_value_creation(0.0, Currency.GBP),  # Not available in old model
+        crypto=optimize_currency_value_creation(0.0, Currency.GBP)  # Not available in old model
     )
     
     housing_inv = HousingInvestments(
-        house_equity=CurrencyValue.from_gbp(old_point.house_equity_gbp or 0.0),
-        rental_property=CurrencyValue.from_gbp(0.0)  # Not available in old model
+        house_equity=optimize_currency_value_creation(old_point.house_equity_gbp or 0.0, Currency.GBP),
+        rental_property=optimize_currency_value_creation(0.0, Currency.GBP)  # Not available in old model
     )
     
     investments_breakdown = InvestmentBreakdown(
@@ -109,11 +115,11 @@ def convert_old_to_unified_data_point(old_point: OldFinancialDataPoint) -> Unifi
         housing=housing_inv
     )
     
-    # Create net worth breakdown
+    # Create net worth breakdown with optimized currency conversion
     net_worth = NetWorthBreakdown(
-        liquid_assets=CurrencyValue.from_gbp(old_point.cumulative_portfolio_gbp or 0.0),
-        illiquid_assets=CurrencyValue.from_gbp(old_point.house_equity_gbp or 0.0),
-        liabilities=CurrencyValue.from_gbp(0.0)  # Not available in old model
+        liquid_assets=optimize_currency_value_creation(old_point.cumulative_portfolio_gbp or 0.0, Currency.GBP),
+        illiquid_assets=optimize_currency_value_creation(old_point.house_equity_gbp or 0.0, Currency.GBP),
+        liabilities=optimize_currency_value_creation(0.0, Currency.GBP)  # Not available in old model
     )
     
     # Create unified data point
@@ -133,25 +139,30 @@ def convert_old_to_unified_data_point(old_point: OldFinancialDataPoint) -> Unifi
 
 
 def convert_old_to_unified_scenario(old_scenario: OldFinancialScenario) -> UnifiedFinancialScenario:
-    """Convert old FinancialScenario to new UnifiedFinancialScenario."""
+    """Convert old FinancialScenario to new UnifiedFinancialScenario with performance optimization."""
     
-    # Determine metadata from scenario name
-    metadata = create_scenario_metadata_from_name(old_scenario.name)
+    # Use optimized scenario analysis
+    def analyze_scenario(scenarios):
+        # Determine metadata from scenario name
+        metadata = create_scenario_metadata_from_name(old_scenario.name)
+        
+        # Convert all data points with optimized conversion
+        unified_data_points = []
+        for old_point in old_scenario.data_points:
+            unified_point = convert_old_to_unified_data_point(old_point)
+            unified_data_points.append(unified_point)
+        
+        # Create unified scenario
+        return UnifiedFinancialScenario(
+            name=old_scenario.name,
+            description=f"Converted from old model: {old_scenario.name}",
+            phase=metadata.relocation_timing and FinancialPhase.UK_TO_INTERNATIONAL or FinancialPhase.UK_ONLY,
+            data_points=unified_data_points,
+            metadata=metadata
+        )
     
-    # Convert all data points
-    unified_data_points = []
-    for old_point in old_scenario.data_points:
-        unified_point = convert_old_to_unified_data_point(old_point)
-        unified_data_points.append(unified_point)
-    
-    # Create unified scenario
-    return UnifiedFinancialScenario(
-        name=old_scenario.name,
-        description=f"Converted from old model: {old_scenario.name}",
-        phase=metadata.relocation_timing and FinancialPhase.UK_TO_INTERNATIONAL or FinancialPhase.UK_ONLY,
-        data_points=unified_data_points,
-        metadata=metadata
-    )
+    # Use optimized analysis
+    return optimize_scenario_analysis([old_scenario], lambda s: analyze_scenario(s[0]))['result']
 
 
 def create_scenario_metadata_from_name(scenario_name: str) -> ScenarioMetadata:
@@ -216,16 +227,9 @@ def create_scenario_metadata_from_name(scenario_name: str) -> ScenarioMetadata:
 
 
 def create_unified_currency_value(value: float, currency: str, exchange_rate: float = 1.0) -> CurrencyValue:
-    """Create a CurrencyValue from raw data."""
-    if currency == "GBP":
-        return CurrencyValue.from_gbp(value)
-    elif currency == "USD":
-        return CurrencyValue.from_usd(value, exchange_rate)
-    elif currency == "EUR":
-        return CurrencyValue.from_eur(value, exchange_rate)
-    else:
-        # Default to GBP
-        return CurrencyValue.from_gbp(value)
+    """Create a CurrencyValue from raw data with performance optimization."""
+    currency_enum = Currency(currency)
+    return optimize_currency_value_creation(value, currency_enum, exchange_rate)
 
 
 def create_unified_income_breakdown(
@@ -234,12 +238,12 @@ def create_unified_income_breakdown(
     rsu_gbp: float = 0.0,
     other_income_gbp: float = 0.0
 ) -> IncomeBreakdown:
-    """Create an IncomeBreakdown from GBP values."""
+    """Create an IncomeBreakdown from GBP values with performance optimization."""
     return IncomeBreakdown(
-        salary=CurrencyValue.from_gbp(salary_gbp),
-        bonus=CurrencyValue.from_gbp(bonus_gbp),
-        rsu_vested=CurrencyValue.from_gbp(rsu_gbp),
-        other_income=CurrencyValue.from_gbp(other_income_gbp)
+        salary=optimize_currency_value_creation(salary_gbp, Currency.GBP),
+        bonus=optimize_currency_value_creation(bonus_gbp, Currency.GBP),
+        rsu_vested=optimize_currency_value_creation(rsu_gbp, Currency.GBP),
+        other_income=optimize_currency_value_creation(other_income_gbp, Currency.GBP)
     )
 
 
@@ -250,39 +254,39 @@ def create_unified_expense_breakdown(
     investments_gbp: float = 0.0,
     other_gbp: float = 0.0
 ) -> ExpenseBreakdown:
-    """Create an ExpenseBreakdown from GBP values."""
+    """Create an ExpenseBreakdown from GBP values with performance optimization."""
     return ExpenseBreakdown(
         housing=HousingExpenses(
-            rent=CurrencyValue.from_gbp(housing_gbp * 0.6),  # Assume 60% rent
-            mortgage=CurrencyValue.from_gbp(housing_gbp * 0.4),  # Assume 40% mortgage
-            utilities=CurrencyValue.from_gbp(0.0),
-            maintenance=CurrencyValue.from_gbp(0.0),
-            property_tax=CurrencyValue.from_gbp(0.0)
+            rent=optimize_currency_value_creation(housing_gbp * 0.6, Currency.GBP),  # Assume 60% rent
+            mortgage=optimize_currency_value_creation(housing_gbp * 0.4, Currency.GBP),  # Assume 40% mortgage
+            utilities=optimize_currency_value_creation(0.0, Currency.GBP),
+            maintenance=optimize_currency_value_creation(0.0, Currency.GBP),
+            property_tax=optimize_currency_value_creation(0.0, Currency.GBP)
         ),
         living=LivingExpenses(
-            food=CurrencyValue.from_gbp(living_gbp * 0.3),
-            transport=CurrencyValue.from_gbp(living_gbp * 0.2),
-            healthcare=CurrencyValue.from_gbp(living_gbp * 0.1),
-            entertainment=CurrencyValue.from_gbp(living_gbp * 0.2),
-            clothing=CurrencyValue.from_gbp(living_gbp * 0.1),
-            personal_care=CurrencyValue.from_gbp(living_gbp * 0.1)
+            food=optimize_currency_value_creation(living_gbp * 0.3, Currency.GBP),
+            transport=optimize_currency_value_creation(living_gbp * 0.2, Currency.GBP),
+            healthcare=optimize_currency_value_creation(living_gbp * 0.1, Currency.GBP),
+            entertainment=optimize_currency_value_creation(living_gbp * 0.2, Currency.GBP),
+            clothing=optimize_currency_value_creation(living_gbp * 0.1, Currency.GBP),
+            personal_care=optimize_currency_value_creation(living_gbp * 0.1, Currency.GBP)
         ),
         taxes=TaxExpenses(
-            income_tax=CurrencyValue.from_gbp(taxes_gbp * 0.7),
-            social_security=CurrencyValue.from_gbp(taxes_gbp * 0.3),
-            property_tax=CurrencyValue.from_gbp(0.0),
-            other_taxes=CurrencyValue.from_gbp(0.0)
+            income_tax=optimize_currency_value_creation(taxes_gbp * 0.7, Currency.GBP),
+            social_security=optimize_currency_value_creation(taxes_gbp * 0.3, Currency.GBP),
+            property_tax=optimize_currency_value_creation(0.0, Currency.GBP),
+            other_taxes=optimize_currency_value_creation(0.0, Currency.GBP)
         ),
         investments=InvestmentExpenses(
-            retirement_contributions=CurrencyValue.from_gbp(investments_gbp * 0.8),
-            investment_fees=CurrencyValue.from_gbp(investments_gbp * 0.1),
-            insurance=CurrencyValue.from_gbp(investments_gbp * 0.1)
+            retirement_contributions=optimize_currency_value_creation(investments_gbp * 0.8, Currency.GBP),
+            investment_fees=optimize_currency_value_creation(investments_gbp * 0.1, Currency.GBP),
+            insurance=optimize_currency_value_creation(investments_gbp * 0.1, Currency.GBP)
         ),
         other=OtherExpenses(
-            education=CurrencyValue.from_gbp(other_gbp * 0.4),
-            travel=CurrencyValue.from_gbp(other_gbp * 0.3),
-            gifts=CurrencyValue.from_gbp(other_gbp * 0.2),
-            miscellaneous=CurrencyValue.from_gbp(other_gbp * 0.1)
+            education=optimize_currency_value_creation(other_gbp * 0.4, Currency.GBP),
+            travel=optimize_currency_value_creation(other_gbp * 0.3, Currency.GBP),
+            gifts=optimize_currency_value_creation(other_gbp * 0.2, Currency.GBP),
+            miscellaneous=optimize_currency_value_creation(other_gbp * 0.1, Currency.GBP)
         )
     )
 
@@ -292,11 +296,11 @@ def create_unified_tax_breakdown(
     social_security_gbp: float = 0.0,
     other_taxes_gbp: float = 0.0
 ) -> TaxBreakdown:
-    """Create a TaxBreakdown from GBP values."""
+    """Create a TaxBreakdown from GBP values with performance optimization."""
     return TaxBreakdown(
-        income_tax=CurrencyValue.from_gbp(income_tax_gbp),
-        social_security=CurrencyValue.from_gbp(social_security_gbp),
-        other_taxes=CurrencyValue.from_gbp(other_taxes_gbp)
+        income_tax=optimize_currency_value_creation(income_tax_gbp, Currency.GBP),
+        social_security=optimize_currency_value_creation(social_security_gbp, Currency.GBP),
+        other_taxes=optimize_currency_value_creation(other_taxes_gbp, Currency.GBP)
     )
 
 
@@ -305,24 +309,24 @@ def create_unified_investment_breakdown(
     taxable_gbp: float = 0.0,
     housing_gbp: float = 0.0
 ) -> InvestmentBreakdown:
-    """Create an InvestmentBreakdown from GBP values."""
+    """Create an InvestmentBreakdown from GBP values with performance optimization."""
     return InvestmentBreakdown(
         retirement=RetirementInvestments(
-            pension=CurrencyValue.from_gbp(retirement_gbp * 0.4),
-            lisa=CurrencyValue.from_gbp(retirement_gbp * 0.2),
-            sipp=CurrencyValue.from_gbp(retirement_gbp * 0.2),
-            ira=CurrencyValue.from_gbp(retirement_gbp * 0.1),
-            employer_match=CurrencyValue.from_gbp(retirement_gbp * 0.1)
+            pension=optimize_currency_value_creation(retirement_gbp * 0.4, Currency.GBP),
+            lisa=optimize_currency_value_creation(retirement_gbp * 0.2, Currency.GBP),
+            sipp=optimize_currency_value_creation(retirement_gbp * 0.2, Currency.GBP),
+            ira=optimize_currency_value_creation(retirement_gbp * 0.1, Currency.GBP),
+            employer_match=optimize_currency_value_creation(retirement_gbp * 0.1, Currency.GBP)
         ),
         taxable=TaxableInvestments(
-            isa=CurrencyValue.from_gbp(taxable_gbp * 0.4),
-            gia=CurrencyValue.from_gbp(taxable_gbp * 0.3),
-            brokerage=CurrencyValue.from_gbp(taxable_gbp * 0.2),
-            crypto=CurrencyValue.from_gbp(taxable_gbp * 0.1)
+            isa=optimize_currency_value_creation(taxable_gbp * 0.4, Currency.GBP),
+            gia=optimize_currency_value_creation(taxable_gbp * 0.3, Currency.GBP),
+            brokerage=optimize_currency_value_creation(taxable_gbp * 0.2, Currency.GBP),
+            crypto=optimize_currency_value_creation(taxable_gbp * 0.1, Currency.GBP)
         ),
         housing=HousingInvestments(
-            house_equity=CurrencyValue.from_gbp(housing_gbp * 0.8),
-            rental_property=CurrencyValue.from_gbp(housing_gbp * 0.2)
+            house_equity=optimize_currency_value_creation(housing_gbp * 0.8, Currency.GBP),
+            rental_property=optimize_currency_value_creation(housing_gbp * 0.2, Currency.GBP)
         )
     )
 
@@ -332,9 +336,19 @@ def create_unified_net_worth_breakdown(
     illiquid_assets_gbp: float = 0.0,
     liabilities_gbp: float = 0.0
 ) -> NetWorthBreakdown:
-    """Create a NetWorthBreakdown from GBP values."""
+    """Create a NetWorthBreakdown from GBP values with performance optimization."""
     return NetWorthBreakdown(
-        liquid_assets=CurrencyValue.from_gbp(liquid_assets_gbp),
-        illiquid_assets=CurrencyValue.from_gbp(illiquid_assets_gbp),
-        liabilities=CurrencyValue.from_gbp(liabilities_gbp)
-    ) 
+        liquid_assets=optimize_currency_value_creation(liquid_assets_gbp, Currency.GBP),
+        illiquid_assets=optimize_currency_value_creation(illiquid_assets_gbp, Currency.GBP),
+        liabilities=optimize_currency_value_creation(liabilities_gbp, Currency.GBP)
+    )
+
+
+def get_performance_metrics() -> Dict[str, Any]:
+    """Get performance metrics for monitoring."""
+    return get_performance_summary()
+
+
+def clear_performance_caches() -> None:
+    """Clear all performance caches."""
+    clear_all_caches() 

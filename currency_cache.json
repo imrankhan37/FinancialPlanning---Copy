@@ -1,0 +1,1 @@
+{"test_key": {"value": "test_value", "timestamp": "2025-07-29T21:04:47.276718", "ttl_seconds": 86400.0, "access_count": 0}, "key1": {"value": "value1", "timestamp": "2025-07-29T21:05:04.766193", "ttl_seconds": 86400.0, "access_count": 0}, "key2": {"value": "value2", "timestamp": "2025-07-29T21:05:04.775621", "ttl_seconds": 86400.0, "access_count": 0}}
