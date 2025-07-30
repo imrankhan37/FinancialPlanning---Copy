@@ -72,6 +72,12 @@ class CurrencyValue(BaseModel):
             gbp_value=gbp_value, 
             exchange_rate=exchange_rate
         )
+    
+    class Config:
+        """Pydantic configuration."""
+        validate_assignment = True
+        extra = "forbid"
+        from_attributes = True
 
 
 # 5. JURISDICTION-SPECIFIC STRUCTURES
@@ -91,6 +97,12 @@ class HousingExpenses(BaseModel):
             self.rent, self.mortgage, self.utilities, 
             self.maintenance, self.property_tax
         ])
+    
+    class Config:
+        """Pydantic configuration."""
+        validate_assignment = True
+        extra = "forbid"
+        from_attributes = True
 
 
 class LivingExpenses(BaseModel):
@@ -110,6 +122,12 @@ class LivingExpenses(BaseModel):
             self.food, self.transport, self.healthcare, 
             self.entertainment, self.clothing, self.personal_care
         ])
+    
+    class Config:
+        """Pydantic configuration."""
+        validate_assignment = True
+        extra = "forbid"
+        from_attributes = True
 
 
 class TaxExpenses(BaseModel):
@@ -127,6 +145,12 @@ class TaxExpenses(BaseModel):
             self.income_tax, self.social_security, 
             self.property_tax, self.other_taxes
         ])
+    
+    class Config:
+        """Pydantic configuration."""
+        validate_assignment = True
+        extra = "forbid"
+        from_attributes = True
 
 
 class InvestmentExpenses(BaseModel):
@@ -142,6 +166,12 @@ class InvestmentExpenses(BaseModel):
         return sum(expense.gbp_value for expense in [
             self.retirement_contributions, self.investment_fees, self.insurance
         ])
+    
+    class Config:
+        """Pydantic configuration."""
+        validate_assignment = True
+        extra = "forbid"
+        from_attributes = True
 
 
 class OtherExpenses(BaseModel):
@@ -158,6 +188,12 @@ class OtherExpenses(BaseModel):
         return sum(expense.gbp_value for expense in [
             self.education, self.travel, self.gifts, self.miscellaneous
         ])
+    
+    class Config:
+        """Pydantic configuration."""
+        validate_assignment = True
+        extra = "forbid"
+        from_attributes = True
 
 
 # 3. SEMANTIC BREAKDOWNS
@@ -182,6 +218,12 @@ class IncomeBreakdown(BaseModel):
         """Net income in GBP (after taxes)."""
         # This will be calculated by the tax breakdown
         return self.total_gbp
+    
+    class Config:
+        """Pydantic configuration."""
+        validate_assignment = True
+        extra = "forbid"
+        from_attributes = True
 
 
 class ExpenseBreakdown(BaseModel):
@@ -199,6 +241,12 @@ class ExpenseBreakdown(BaseModel):
         return sum(expense.gbp_value for expense in [
             self.housing, self.living, self.taxes, self.investments, self.other
         ])
+    
+    class Config:
+        """Pydantic configuration."""
+        validate_assignment = True
+        extra = "forbid"
+        from_attributes = True
 
 
 class TaxBreakdown(BaseModel):
@@ -214,6 +262,12 @@ class TaxBreakdown(BaseModel):
         return sum(tax.gbp_value for tax in [
             self.income_tax, self.social_security, self.other_taxes
         ])
+    
+    class Config:
+        """Pydantic configuration."""
+        validate_assignment = True
+        extra = "forbid"
+        from_attributes = True
 
 
 class RetirementInvestments(BaseModel):
@@ -231,6 +285,12 @@ class RetirementInvestments(BaseModel):
         return sum(inv.gbp_value for inv in [
             self.pension, self.lisa, self.sipp, self.ira, self.employer_match
         ])
+    
+    class Config:
+        """Pydantic configuration."""
+        validate_assignment = True
+        extra = "forbid"
+        from_attributes = True
 
 
 class TaxableInvestments(BaseModel):
@@ -247,6 +307,12 @@ class TaxableInvestments(BaseModel):
         return sum(inv.gbp_value for inv in [
             self.isa, self.gia, self.brokerage, self.crypto
         ])
+    
+    class Config:
+        """Pydantic configuration."""
+        validate_assignment = True
+        extra = "forbid"
+        from_attributes = True
 
 
 class HousingInvestments(BaseModel):
@@ -261,6 +327,12 @@ class HousingInvestments(BaseModel):
         return sum(inv.gbp_value for inv in [
             self.house_equity, self.rental_property
         ])
+    
+    class Config:
+        """Pydantic configuration."""
+        validate_assignment = True
+        extra = "forbid"
+        from_attributes = True
 
 
 class InvestmentBreakdown(BaseModel):
@@ -276,6 +348,12 @@ class InvestmentBreakdown(BaseModel):
         return sum(inv.gbp_value for inv in [
             self.retirement, self.taxable, self.housing
         ])
+    
+    class Config:
+        """Pydantic configuration."""
+        validate_assignment = True
+        extra = "forbid"
+        from_attributes = True
 
 
 class NetWorthBreakdown(BaseModel):
@@ -289,6 +367,12 @@ class NetWorthBreakdown(BaseModel):
     def total_gbp(self) -> float:
         """Net worth in GBP."""
         return self.liquid_assets.gbp_value + self.illiquid_assets.gbp_value - self.liabilities.gbp_value
+    
+    class Config:
+        """Pydantic configuration."""
+        validate_assignment = True
+        extra = "forbid"
+        from_attributes = True
 
 
 # 2. UNIFIED FINANCIAL DATA
@@ -347,6 +431,7 @@ class UnifiedFinancialData(BaseModel):
         """Pydantic configuration."""
         validate_assignment = True
         extra = "forbid"
+        from_attributes = True
 
 
 class ScenarioMetadata(BaseModel):
@@ -358,6 +443,12 @@ class ScenarioMetadata(BaseModel):
     salary_progression: str = Field(..., description="Salary progression path")
     investment_strategy: str = Field(..., description="Investment strategy")
     description: str = Field("", description="Scenario description")
+    
+    class Config:
+        """Pydantic configuration."""
+        validate_assignment = True
+        extra = "forbid"
+        from_attributes = True
 
 
 # 6. UNIFIED SCENARIO
@@ -367,7 +458,7 @@ class UnifiedFinancialScenario(BaseModel):
     description: str = Field("", description="Scenario description")
     phase: FinancialPhase = Field(..., description="Financial phase")
     data_points: List[UnifiedFinancialData] = Field(default_factory=list, description="Financial data points")
-    metadata: ScenarioMetadata = Field(..., description="Scenario metadata")
+    metadata: Optional[ScenarioMetadata] = Field(None, description="Scenario metadata")
     
     def add_data_point(self, data_point: UnifiedFinancialData) -> None:
         """Add a data point to the scenario."""
@@ -414,4 +505,5 @@ class UnifiedFinancialScenario(BaseModel):
     class Config:
         """Pydantic configuration."""
         validate_assignment = True
-        extra = "forbid" 
+        extra = "forbid"
+        from_attributes = True 

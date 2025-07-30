@@ -1,0 +1,30 @@
+# New York State Tax Configuration
+# Extends US Federal Tax (state + city taxes)
+
+tax_system:
+  id: "us_new_york"
+  name: "US Federal + New York State + City"
+  description: "US federal tax + NY state tax + NYC city tax"
+  version: "2.0.0"
+  created: "2025-01-29"
+  currency: "USD"
+  extends: "us_federal"
+
+state:
+  type: "new_york"
+  brackets:
+    - { limit: 8500, rate: 0.04 }
+    - { limit: 11700, rate: 0.045 }
+    - { limit: 13900, rate: 0.0525 }
+    - { limit: 80650, rate: 0.055 }
+    - { limit: 215400, rate: 0.06 }
+    - { limit: 1077550, rate: 0.0685 }
+    - { limit: null, rate: 0.0965 }
+
+city:
+  type: "new_york_city"
+  brackets:
+    - { limit: 12000, rate: 0.03078 }
+    - { limit: 25000, rate: 0.03762 }
+    - { limit: 50000, rate: 0.03819 }
+    - { limit: null, rate: 0.03876 } 

@@ -3,9 +3,9 @@ Scenario Helper Functions
 Common functionality used across different financial scenarios.
 """
 
-from .uk_tax import calculate_uk_investment_allocation
-from .us_tax import calculate_us_expenses, calculate_us_retirement_contribution
-from .uae_tax import calculate_uae_expenses
+from .tax.uk_tax import calculate_uk_investment_allocation
+from .tax.us_tax import calculate_us_expenses, calculate_us_retirement_contribution
+from .tax.uae_tax import calculate_uae_expenses
 from .common import calculate_mortgage_payment, convert_usd_to_gbp
 
 def initialize_scenario_state(config):

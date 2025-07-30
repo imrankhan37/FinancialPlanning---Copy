@@ -1,0 +1,122 @@
+# Tax Configuration
+# Professional tax system configurations for all locations
+
+version: "2.0.0"
+metadata:
+  created: "2025-01-29"
+  author: "Financial Planning System"
+  description: "Comprehensive tax system configurations"
+
+systems:
+  uk_income_tax_ni:
+    name: "UK Income Tax + National Insurance"
+    description: "UK tax system with income tax and NI"
+    components: ["income_tax", "national_insurance", "student_loan"]
+    config:
+      bands:
+        personal_allowance: 12570
+        basic_rate_limit: 50270
+        higher_rate_limit: 125140
+        pa_taper_threshold: 100000
+        threshold_freeze_until: 2028
+      rates:
+        basic: 0.20
+        higher: 0.40
+        additional: 0.45
+      ni_bands:
+        primary_threshold: 12570
+        upper_earnings_limit: 50270
+      ni_rates:
+        main: 0.08
+        upper: 0.02
+      student_loan:
+        threshold: 28470
+        repayment_rate: 0.09
+        interest_rate_rpi: 0.043
+        interest_rate_max_premium: 0.03
+        interest_lower_income_threshold: 28470
+        interest_upper_income_threshold: 51245
+
+  us_federal_state:
+    name: "US Federal + State Tax"
+    description: "US tax system with federal and state taxes (WA)"
+    components: ["federal_tax", "fica", "state_tax"]
+    config:
+      federal:
+        standard_deduction: 15000
+        brackets:
+          - { limit: 11925, rate: 0.10, base: 0 }
+          - { limit: 48475, rate: 0.12, base: 1192.50 }
+          - { limit: 96950, rate: 0.22, base: 5595.50 }
+          - { limit: 206700, rate: 0.24, base: 17843.50 }
+          - { limit: 394600, rate: 0.32, base: 46253.50 }
+          - { limit: 626350, rate: 0.35, base: 104755.50 }
+          - { limit: null, rate: 0.37, base: 186601.50 }
+      fica:
+        social_security_limit: 176100
+        social_security_rate: 0.062
+        medicare_rate: 0.0145
+        additional_medicare_threshold: 200000
+        additional_medicare_rate: 0.009
+      state:
+        type: "none"  # WA has no state income tax
+
+  us_federal_state_city:
+    name: "US Federal + State + City Tax"
+    description: "US tax system with federal, state, and city taxes (NYC)"
+    components: ["federal_tax", "fica", "state_tax", "city_tax"]
+    config:
+      federal:
+        standard_deduction: 15000
+        brackets:
+          - { limit: 11925, rate: 0.10, base: 0 }
+          - { limit: 48475, rate: 0.12, base: 1192.50 }
+          - { limit: 96950, rate: 0.22, base: 5595.50 }
+          - { limit: 206700, rate: 0.24, base: 17843.50 }
+          - { limit: 394600, rate: 0.32, base: 46253.50 }
+          - { limit: 626350, rate: 0.35, base: 104755.50 }
+          - { limit: null, rate: 0.37, base: 186601.50 }
+      fica:
+        social_security_limit: 176100
+        social_security_rate: 0.062
+        medicare_rate: 0.0145
+        additional_medicare_threshold: 200000
+        additional_medicare_rate: 0.009
+      state:
+        type: "new_york"
+        brackets:
+          - { limit: 8500, rate: 0.04 }
+          - { limit: 11700, rate: 0.045 }
+          - { limit: 13900, rate: 0.0525 }
+          - { limit: 80650, rate: 0.055 }
+          - { limit: 215400, rate: 0.06 }
+          - { limit: 1077550, rate: 0.0685 }
+          - { limit: null, rate: 0.0965 }
+      city:
+        type: "new_york_city"
+        brackets:
+          - { limit: 12000, rate: 0.03078 }
+          - { limit: 25000, rate: 0.03762 }
+          - { limit: 50000, rate: 0.03819 }
+          - { limit: null, rate: 0.03876 }
+
+  tax_free:
+    name: "Tax Free"
+    description: "No income tax system (Dubai)"
+    components: ["student_loan_only"]
+    config:
+      income_tax_rate: 0.0
+      social_security_rate: 0.0
+      student_loan:
+        threshold: 28470
+        repayment_rate: 0.09
+        interest_rate_rpi: 0.043
+        interest_rate_max_premium: 0.03
+        interest_lower_income_threshold: 28470
+        interest_upper_income_threshold: 51245
+
+location_tax_mapping:
+  UK: "uk_income_tax_ni"
+  seattle: "us_federal_state"
+  new_york: "us_federal_state_city"
+  dubai: "tax_free" 

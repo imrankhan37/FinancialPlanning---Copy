@@ -74,11 +74,12 @@ def calculate_uk_student_loan(gross_income, loan_balance, config):
 
 def calculate_uk_investment_allocation(annual_net_savings, config):
     """Calculates UK investment allocation across ISA, LISA, SIPP, and GIA."""
-    # Investment Allocation
+    # Investment Allocation - LISA and ISA are separate allowances
     lisa_contr = min(max(0, annual_net_savings), config["lisa_allowance"])
     remaining_savings = max(0, annual_net_savings - lisa_contr)
     
-    isa_contr = min(remaining_savings, config["isa_allowance"] - lisa_contr)
+    # ISA gets full allowance (separate from LISA)
+    isa_contr = min(remaining_savings, config["isa_allowance"])
     remaining_savings -= isa_contr
     
     # Simple SIPP logic for overflow, a real plan would optimize for the 60% band
@@ -95,40 +96,23 @@ def calculate_uk_investment_allocation(annual_net_savings, config):
         "lisa_bonus": lisa_contr * config["lisa_bonus_rate"]
     }
 
-def calculate_uk_expenses(plan_year, year, config, inf_multiplier):
-    """Calculates UK expenses including personal, parental support, rent, etc."""
-    # Personal Expenses
-    pe = config["personal_expenses"].get(plan_year, config["personal_expenses"]["default"]) * inf_multiplier
+def calculate_uk_expenses(loc_config, inf_multiplier):
+    """Calculates UK location-specific expenses including rent, healthcare, etc."""
+    # Housing
+    rent = loc_config["rent_monthly"] * 12 * inf_multiplier
     
-    # Parental Support
-    ps = (config["parental_support"]["after_house"] if plan_year >= config["parental_support"]["house_purchase_year"] else config["parental_support"]["before_house"]) * inf_multiplier
+    # Healthcare (NHS is free, but private healthcare costs)
+    healthcare = loc_config["healthcare_monthly"] * 12 * inf_multiplier
     
-    # Other expenses
-    travel = config["annual_travel"] * inf_multiplier
-    rent = (config["personal_rent"]["amount"] * inf_multiplier) if plan_year >= config["personal_rent"]["start_year"] else 0
+    # Retirement contribution (pension)
+    retirement_contrib = 0  # Will be calculated based on salary
     
-    # University fee payment (3 payments of £5,600 in Year 1 for current masters)
-    uni_payment = 0
-    if plan_year == config["university_fee_payment"]["year"]:
-        uni_payment = config["university_fee_payment"]["amount"]
-    
-    # Goal-based expenses
-    marriage_cost = 0
-    if config["marriage_goal"]["start_year"] <= plan_year <= config["marriage_goal"]["end_year"]:
-        marriage_cost = config["marriage_goal"]["total_cost"] / (config["marriage_goal"]["end_year"] - config["marriage_goal"]["start_year"] + 1)
-    
-    child_cost = 0
-    if plan_year == config["child_costs"]["start_year"]:
-        child_cost = config["child_costs"]["one_off_cost"]
-    elif plan_year > config["child_costs"]["start_year"]:
-        child_cost = config["child_costs"]["ongoing_annual_cost"] * inf_multiplier
+    # General living expenses
+    general_expenses = loc_config["general_expenses_monthly"] * 12 * inf_multiplier
     
     return {
-        "personal": pe,
-        "parental_support": ps,
-        "travel": travel,
         "rent": rent,
-        "university_payment": uni_payment,
-        "marriage": marriage_cost,
-        "child": child_cost
+        "healthcare": healthcare,
+        "retirement_contribution": retirement_contrib,
+        "general_expenses": general_expenses
     } 

@@ -3,20 +3,20 @@ Financial Planning Utilities Package
 Contains tax calculations and utilities for different jurisdictions.
 """
 
-from .uk_tax import (
+from .tax.uk_tax import (
     calculate_uk_tax_ni,
     calculate_uk_student_loan,
     calculate_uk_investment_allocation,
     calculate_uk_expenses
 )
 
-from .us_tax import (
+from .tax.us_tax import (
     calculate_us_tax,
     calculate_us_expenses,
     calculate_us_retirement_contribution
 )
 
-from .uae_tax import (
+from .tax.uae_tax import (
     calculate_uae_expenses
 )
 

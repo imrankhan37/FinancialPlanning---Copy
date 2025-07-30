@@ -1,0 +1,38 @@
+# UK Income Tax + National Insurance Configuration
+# 2025/26 tax year rates and bands
+
+tax_system:
+  id: "uk_income_tax_ni"
+  name: "UK Income Tax + National Insurance"
+  description: "UK tax system with income tax and NI"
+  version: "2.0.0"
+  created: "2025-01-29"
+  currency: "GBP"
+
+income_tax:
+  bands:
+    personal_allowance: 12570
+    basic_rate_limit: 50270
+    higher_rate_limit: 125140
+    pa_taper_threshold: 100000
+    threshold_freeze_until: 2028
+  rates:
+    basic: 0.20
+    higher: 0.40
+    additional: 0.45
+
+national_insurance:
+  bands:
+    primary_threshold: 12570
+    upper_earnings_limit: 50270
+  rates:
+    main: 0.08
+    upper: 0.02
+
+student_loan:
+  threshold: 28470
+  repayment_rate: 0.09
+  interest_rate_rpi: 0.043
+  interest_rate_max_premium: 0.03
+  interest_lower_income_threshold: 28470
+  interest_upper_income_threshold: 51245 

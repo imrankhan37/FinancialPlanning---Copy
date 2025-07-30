@@ -1,0 +1,16 @@
+# Washington State Tax Configuration
+# Extends US Federal Tax (no state income tax)
+
+tax_system:
+  id: "us_washington"
+  name: "US Federal + Washington State"
+  description: "US federal tax + Washington (no state income tax)"
+  version: "2.0.0"
+  created: "2025-01-29"
+  currency: "USD"
+  extends: "us_federal"
+
+state:
+  type: "washington"
+  income_tax_rate: 0.0  # No state income tax
+  description: "Washington has no state income tax" 

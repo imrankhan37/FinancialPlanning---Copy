@@ -7,8 +7,29 @@ USD_TO_GBP_RATE = 1.26
 GBP_TO_USD_RATE = 1 / USD_TO_GBP_RATE
 
 # Default values
-DEFAULT_YEAR_RANGE = (1, 10)
-DEFAULT_SCENARIOS = []
+DEFAULT_YEAR_RANGE = (2025, 2034)
+DEFAULT_SCENARIOS = [
+    'UK_Scenario_A',
+    'UK_Scenario_B',
+    'Seattle Uk Home',
+    'Seattle Local Home',
+    'New York Uk Home',
+    'New York Local Home',
+    'Dubai Uk Home',
+    'Dubai Local Home',
+    'Seattle Year4 Uk Home',
+    'Seattle Year4 Local Home',
+    'Seattle Year5 Uk Home',
+    'Seattle Year5 Local Home',
+    'New York Year4 Uk Home',
+    'New York Year4 Local Home',
+    'New York Year5 Uk Home',
+    'New York Year5 Local Home',
+    'Dubai Year4 Uk Home',
+    'Dubai Year4 Local Home',
+    'Dubai Year5 Uk Home',
+    'Dubai Year5 Local Home'
+]
 
 # Performance thresholds
 MEMORY_WARNING_THRESHOLD = 80.0  # Percentage

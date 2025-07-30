@@ -1,0 +1,24 @@
+# California State Tax Configuration
+# Extends US Federal Tax (high state income tax)
+
+tax_system:
+  id: "us_california"
+  name: "US Federal + California State"
+  description: "US federal tax + California state tax"
+  version: "2.0.0"
+  created: "2025-01-29"
+  currency: "USD"
+  extends: "us_federal"
+
+state:
+  type: "california"
+  brackets:
+    - { limit: 10099, rate: 0.01 }
+    - { limit: 23942, rate: 0.02 }
+    - { limit: 37788, rate: 0.04 }
+    - { limit: 52455, rate: 0.06 }
+    - { limit: 66295, rate: 0.08 }
+    - { limit: 338639, rate: 0.093 }
+    - { limit: 406364, rate: 0.103 }
+    - { limit: 677275, rate: 0.113 }
+    - { limit: null, rate: 0.133 } 

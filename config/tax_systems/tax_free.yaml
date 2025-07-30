@@ -1,0 +1,16 @@
+# Tax Free Configuration (Dubai)
+# No income tax system
+
+tax_system:
+  id: "tax_free"
+  name: "Tax Free"
+  description: "No income tax system (Dubai)"
+  version: "2.0.0"
+  created: "2025-01-29"
+  currency: "USD"
+
+income_tax:
+  rate: 0.0
+
+social_security:
+  rate: 0.0 

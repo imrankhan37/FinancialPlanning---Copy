@@ -1,0 +1,218 @@
+{
+    "templates": {
+        "uk_only": {
+            "name": "UK Only",
+            "description": "Stay in UK for entire period",
+            "phases": [
+                {
+                    "name": "UK_ONLY",
+                    "location": "UK",
+                    "start_year": 1,
+                    "end_year": 10
+                }
+            ],
+            "housing_strategies": ["uk_home"]
+        },
+        "international": {
+            "name": "International",
+            "description": "Move to international location",
+            "phases": [
+                {
+                    "name": "INTERNATIONAL_ONLY",
+                    "location": "{{location}}",
+                    "start_year": 1,
+                    "end_year": 10
+                }
+            ],
+            "housing_strategies": ["uk_home", "local_home"],
+            "locations": ["seattle", "new_york", "dubai"]
+        },
+        "delayed_relocation": {
+            "name": "Delayed Relocation",
+            "description": "Start in UK, then move to international location",
+            "phases": [
+                {
+                    "name": "UK_ONLY",
+                    "location": "UK",
+                    "start_year": 1,
+                    "end_year": "{{uk_years}}"
+                },
+                {
+                    "name": "INTERNATIONAL_ONLY",
+                    "location": "{{location}}",
+                    "start_year": "{{uk_years + 1}}",
+                    "end_year": 10
+                }
+            ],
+            "housing_strategies": ["uk_home", "local_home"],
+            "locations": ["seattle", "new_york", "dubai"],
+            "uk_years_options": [3, 4],
+            "salary_multipliers": [1.1, 1.2]
+        }
+    },
+    
+    "instances": {
+        "uk_scenario_a": {
+            "template": "uk_only",
+            "scenario_type": "A",
+            "name": "UK Scenario A",
+            "description": "UK career path A"
+        },
+        "uk_scenario_b": {
+            "template": "uk_only",
+            "scenario_type": "B",
+            "name": "UK Scenario B",
+            "description": "UK career path B"
+        },
+        "seattle_uk_home": {
+            "template": "international",
+            "location": "seattle",
+            "housing_strategy": "uk_home",
+            "name": "Seattle - Buy UK Home",
+            "description": "Move to Seattle, buy UK home"
+        },
+        "seattle_local_home": {
+            "template": "international",
+            "location": "seattle",
+            "housing_strategy": "local_home",
+            "name": "Seattle - Buy Local Home",
+            "description": "Move to Seattle, buy local home"
+        },
+        "new_york_uk_home": {
+            "template": "international",
+            "location": "new_york",
+            "housing_strategy": "uk_home",
+            "name": "New York - Buy UK Home",
+            "description": "Move to New York, buy UK home"
+        },
+        "new_york_local_home": {
+            "template": "international",
+            "location": "new_york",
+            "housing_strategy": "local_home",
+            "name": "New York - Buy Local Home",
+            "description": "Move to New York, buy local home"
+        },
+        "dubai_uk_home": {
+            "template": "international",
+            "location": "dubai",
+            "housing_strategy": "uk_home",
+            "name": "Dubai - Buy UK Home",
+            "description": "Move to Dubai, buy UK home"
+        },
+        "dubai_local_home": {
+            "template": "international",
+            "location": "dubai",
+            "housing_strategy": "local_home",
+            "name": "Dubai - Buy Local Home",
+            "description": "Move to Dubai, buy local home"
+        },
+        "seattle_year4_uk_home": {
+            "template": "delayed_relocation",
+            "location": "seattle",
+            "uk_years": 3,
+            "housing_strategy": "uk_home",
+            "salary_multiplier": 1.1,
+            "name": "Seattle (Move Year 4) - Buy UK Home",
+            "description": "Start in UK for 3 years, then move to Seattle and buy UK home"
+        },
+        "seattle_year4_local_home": {
+            "template": "delayed_relocation",
+            "location": "seattle",
+            "uk_years": 3,
+            "housing_strategy": "local_home",
+            "salary_multiplier": 1.1,
+            "name": "Seattle (Move Year 4) - Buy Local Home",
+            "description": "Start in UK for 3 years, then move to Seattle and buy local home"
+        },
+        "seattle_year5_uk_home": {
+            "template": "delayed_relocation",
+            "location": "seattle",
+            "uk_years": 4,
+            "housing_strategy": "uk_home",
+            "salary_multiplier": 1.2,
+            "name": "Seattle (Move Year 5) - Buy UK Home",
+            "description": "Start in UK for 4 years, then move to Seattle and buy UK home"
+        },
+        "seattle_year5_local_home": {
+            "template": "delayed_relocation",
+            "location": "seattle",
+            "uk_years": 4,
+            "housing_strategy": "local_home",
+            "salary_multiplier": 1.2,
+            "name": "Seattle (Move Year 5) - Buy Local Home",
+            "description": "Start in UK for 4 years, then move to Seattle and buy local home"
+        },
+        "new_york_year4_uk_home": {
+            "template": "delayed_relocation",
+            "location": "new_york",
+            "uk_years": 3,
+            "housing_strategy": "uk_home",
+            "salary_multiplier": 1.1,
+            "name": "New York (Move Year 4) - Buy UK Home",
+            "description": "Start in UK for 3 years, then move to New York and buy UK home"
+        },
+        "new_york_year4_local_home": {
+            "template": "delayed_relocation",
+            "location": "new_york",
+            "uk_years": 3,
+            "housing_strategy": "local_home",
+            "salary_multiplier": 1.1,
+            "name": "New York (Move Year 4) - Buy Local Home",
+            "description": "Start in UK for 3 years, then move to New York and buy local home"
+        },
+        "new_york_year5_uk_home": {
+            "template": "delayed_relocation",
+            "location": "new_york",
+            "uk_years": 4,
+            "housing_strategy": "uk_home",
+            "salary_multiplier": 1.2,
+            "name": "New York (Move Year 5) - Buy UK Home",
+            "description": "Start in UK for 4 years, then move to New York and buy UK home"
+        },
+        "new_york_year5_local_home": {
+            "template": "delayed_relocation",
+            "location": "new_york",
+            "uk_years": 4,
+            "housing_strategy": "local_home",
+            "salary_multiplier": 1.2,
+            "name": "New York (Move Year 5) - Buy Local Home",
+            "description": "Start in UK for 4 years, then move to New York and buy local home"
+        },
+        "dubai_year4_uk_home": {
+            "template": "delayed_relocation",
+            "location": "dubai",
+            "uk_years": 3,
+            "housing_strategy": "uk_home",
+            "salary_multiplier": 1.1,
+            "name": "Dubai (Move Year 4) - Buy UK Home",
+            "description": "Start in UK for 3 years, then move to Dubai and buy UK home"
+        },
+        "dubai_year4_local_home": {
+            "template": "delayed_relocation",
+            "location": "dubai",
+            "uk_years": 3,
+            "housing_strategy": "local_home",
+            "salary_multiplier": 1.1,
+            "name": "Dubai (Move Year 4) - Buy Local Home",
+            "description": "Start in UK for 3 years, then move to Dubai and buy local home"
+        },
+        "dubai_year5_uk_home": {
+            "template": "delayed_relocation",
+            "location": "dubai",
+            "uk_years": 4,
+            "housing_strategy": "uk_home",
+            "salary_multiplier": 1.2,
+            "name": "Dubai (Move Year 5) - Buy UK Home",
+            "description": "Start in UK for 4 years, then move to Dubai and buy UK home"
+        },
+        "dubai_year5_local_home": {
+            "template": "delayed_relocation",
+            "location": "dubai",
+            "uk_years": 4,
+            "housing_strategy": "local_home",
+            "salary_multiplier": 1.2,
+            "name": "Dubai (Move Year 5) - Buy Local Home",
+            "description": "Start in UK for 4 years, then move to Dubai and buy local home"
+        }
+    }
+} 

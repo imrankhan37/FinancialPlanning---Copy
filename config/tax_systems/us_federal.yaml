@@ -1,0 +1,28 @@
+# US Federal Tax Configuration (Base)
+# 2025 tax year rates and brackets
+
+tax_system:
+  id: "us_federal"
+  name: "US Federal Tax"
+  description: "US federal tax system (base configuration)"
+  version: "2.0.0"
+  created: "2025-01-29"
+  currency: "USD"
+
+federal:
+  standard_deduction: 15000
+  brackets:
+    - { limit: 11925, rate: 0.10, base: 0 }
+    - { limit: 48475, rate: 0.12, base: 1192.50 }
+    - { limit: 96950, rate: 0.22, base: 5595.50 }
+    - { limit: 206700, rate: 0.24, base: 17843.50 }
+    - { limit: 394600, rate: 0.32, base: 46253.50 }
+    - { limit: 626350, rate: 0.35, base: 104755.50 }
+    - { limit: null, rate: 0.37, base: 186601.50 }
+
+fica:
+  social_security_limit: 168600
+  social_security_rate: 0.062
+  medicare_rate: 0.0145
+  additional_medicare_threshold: 200000
+  additional_medicare_rate: 0.009 

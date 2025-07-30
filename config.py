@@ -100,6 +100,19 @@ CONFIG = {
         "default": 0.020
     },
     
+    # Location-Specific Configurations
+    "location_configs": {
+        "UK": {
+            "name": "United Kingdom",
+            "currency": "GBP",
+            "exchange_rate": 1.0,
+            "rent_monthly": 2100,  # £2,100/month for 1-bedroom apartment
+            "healthcare_monthly": 0,  # NHS is free, private healthcare optional
+            "retirement_contribution": 0.05,  # 5% pension contribution
+            "general_expenses_monthly": 1500,  # £1,500/month
+        }
+    },
+    
     # International Scenarios Configuration
     "international_scenarios": {
         "seattle": {

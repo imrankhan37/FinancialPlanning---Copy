@@ -8,34 +8,56 @@ from typing import Dict, List, Optional, Any, Tuple, Set
 from utils.data import get_scenario_metadata
 
 
+
+
 def render_scenario_selector() -> None:
     """Render the main scenario selector with multi-select dropdown."""
     
-    # Get available scenarios
-    metadata: Dict[str, List[str]] = get_scenario_metadata()
-    all_scenarios: List[str] = metadata['uk_scenarios'] + metadata['international_scenarios']
-    
-    # Set default selection to all scenarios if none selected
-    if not st.session_state.selected_scenarios and all_scenarios:
-        st.session_state.selected_scenarios = all_scenarios
-    
-    # Multi-select dropdown for scenario selection
-    selected: List[str] = st.sidebar.multiselect(
-        "Select Scenarios",
-        options=all_scenarios,
-        default=st.session_state.selected_scenarios,
-        help="Choose scenarios to compare. Use Ctrl/Cmd+Click for multiple selections."
-    )
-    
-    # Update session state if selection changed
-    if selected != st.session_state.selected_scenarios:
-        st.session_state.selected_scenarios = selected
-    
-    # Show selection summary
-    if selected:
-        st.sidebar.caption(f"Selected {len(selected)} scenario(s): {', '.join(selected)}")
-    else:
-        st.sidebar.warning("Please select at least one scenario.")
+    try:
+        # Get available scenarios
+        metadata: Dict[str, List[str]] = get_scenario_metadata()
+        all_scenarios: List[str] = metadata['uk_scenarios'] + metadata['international_scenarios'] + metadata['delayed_relocation_scenarios']
+        
+        # Set default selection to all scenarios if none selected or if selection is empty
+        if (not st.session_state.selected_scenarios or 
+            len(st.session_state.selected_scenarios) == 0) and all_scenarios:
+            st.session_state.selected_scenarios = all_scenarios.copy()
+        
+        # Check for mismatched scenarios
+        mismatched = [s for s in st.session_state.selected_scenarios if s not in all_scenarios]
+        if mismatched:
+            # Remove mismatched scenarios from selection
+            st.session_state.selected_scenarios = [s for s in st.session_state.selected_scenarios if s in all_scenarios]
+        
+        # If no scenarios are selected after filtering, select all available
+        if not st.session_state.selected_scenarios and all_scenarios:
+            st.session_state.selected_scenarios = all_scenarios.copy()
+        
+        # Multi-select dropdown for scenario selection
+        selected: List[str] = st.sidebar.multiselect(
+            "Select Scenarios",
+            options=all_scenarios,
+            default=st.session_state.selected_scenarios,
+            help="Choose scenarios to compare. Use Ctrl/Cmd+Click for multiple selections."
+        )
+        
+        # Update session state if selection changed
+        if selected != st.session_state.selected_scenarios:
+            st.session_state.selected_scenarios = selected
+        
+        # Show selection summary and controls
+        if selected:
+            st.sidebar.caption(f"Selected {len(selected)} scenario(s): {', '.join(selected)}")
+        else:
+            st.sidebar.warning("Please select at least one scenario.")
+        
+        # Add button to select all scenarios
+        if st.sidebar.button("Select All Scenarios", help="Quickly select all available scenarios"):
+            st.session_state.selected_scenarios = all_scenarios.copy()
+            st.rerun()
+        
+    except Exception as e:
+        st.error(f"Failed to render scenario selector: {str(e)}")
 
 
 def render_quick_filters() -> None:
