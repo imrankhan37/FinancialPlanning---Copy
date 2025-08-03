@@ -1,0 +1,160 @@
+template_type: "life_event"
+version: "1.0.0"
+metadata:
+  name: "Children and Family"
+  description: "Child-related costs from birth through education"
+  category: "ongoing_life_event"
+  author: "Financial Planning System"
+
+# Event configuration
+event:
+  type: "child_costs"
+  duration_type: "ongoing"  # Ongoing costs for many years
+  priority: "high"
+  
+  # Default timing (can be overridden in scenario)
+  default_timing:
+    start_year: 7
+    duration: "indefinite"  # Continues beyond planning horizon
+    
+  # Cost structure
+  costs:
+    one_off_costs:
+      # Birth and first year setup
+      maternity_paternity_leave: 5000   # Lost income/additional costs
+      baby_equipment: 2000               # Cot, pram, car seat, etc.
+      nursery_setup: 1500               # Room preparation
+      
+      total_one_off: 8500
+    
+    ongoing_annual_costs:
+      base_annual_cost: 10000           # Base annual cost per child
+      currency: "GBP"
+      
+      # Cost breakdown by category
+      annual_breakdown:
+        childcare: 6000                 # 60% - Nursery/childminder
+        food_clothing: 2000             # 20% - Food and clothing
+        healthcare_extras: 800          # 8% - Private healthcare, dentist
+        activities_entertainment: 700    # 7% - Clubs, activities, toys
+        education_extras: 300           # 3% - Books, school trips
+        miscellaneous: 200              # 2% - Other costs
+
+# Age-based cost progression
+cost_progression:
+  by_age:
+    0-2:    # Baby/toddler years
+      annual_cost: 12000              # Higher due to childcare
+      childcare_percentage: 0.70      # 70% of costs are childcare
+      
+    3-5:    # Pre-school years  
+      annual_cost: 11000              # Still high childcare costs
+      childcare_percentage: 0.65      # 65% childcare
+      education_extras: 500           # Pre-school activities
+      
+    6-11:   # Primary school years
+      annual_cost: 8000               # Lower childcare, free education
+      childcare_percentage: 0.30      # After-school care only
+      education_extras: 800           # School trips, uniforms
+      
+    12-16:  # Secondary school years
+      annual_cost: 9000               # Higher food/clothing costs
+      childcare_percentage: 0.10      # Minimal childcare
+      education_extras: 1200          # School supplies, trips
+      social_costs: 1500              # Teen social activities
+      
+    17-18:  # College/university preparation
+      annual_cost: 10000              # University preparation costs
+      education_extras: 3000          # A-levels, university applications
+      
+    19+:    # University years (if supported)
+      annual_cost: 15000              # University support
+      education_support: 12000        # Tuition and living costs
+      accommodation_support: 3000     # Help with accommodation
+
+# Multiple children considerations
+multiple_children:
+  scaling_factor:
+    one_child: 1.0                    # Base cost
+    two_children: 1.7                 # 70% additional (economies of scale)
+    three_children: 2.3               # 130% additional 
+    four_plus_children: 2.8           # 180% additional
+  
+  age_gap_adjustments:
+    close_together: 0.9               # 10% discount for shared items
+    spaced_apart: 1.0                 # No discount
+
+# Financial impact
+financial_impact:
+  immediate_costs:
+    one_off_setup: 8500
+    first_year_total: 20500           # One-off + first year costs
+  
+  long_term_costs:
+    annual_ongoing: 10000
+    total_18_years: 180000            # Approximate total to age 18
+    with_university: 240000           # Including university support
+  
+  lifestyle_adjustments:
+    housing_needs: "larger_property"
+    transport_needs: "family_car"
+    insurance_increases: 500          # Annual insurance cost increase
+    utility_increases: 600            # Annual utility cost increase
+
+# Income impact considerations
+income_impact:
+  maternity_paternity:
+    maternal_leave_months: 12         # Typical maternity leave
+    paternal_leave_months: 2          # Typical paternity leave
+    income_reduction_percentage: 0.60  # Statutory pay vs full salary
+  
+  career_flexibility:
+    part_time_consideration: true
+    remote_work_preference: true
+    career_progression_impact: "moderate"
+  
+  childcare_vs_income:
+    childcare_income_threshold: 25000  # If childcare > this, consider staying home
+    tax_credit_eligibility: true
+
+# Government support (UK)
+government_support:
+  child_benefit:
+    first_child_weekly: 24.00         # £24/week for first child
+    additional_child_weekly: 15.90    # £15.90/week for additional children
+    high_earner_reduction: true       # Tapered for high earners
+  
+  tax_free_childcare:
+    annual_allowance: 2000            # Up to £2000/year tax-free childcare
+    government_top_up: 0.25           # 25% government contribution
+  
+  child_tax_credits:
+    income_dependent: true
+    maximum_annual: 3000              # Approximate maximum
+
+# Variations for different family scenarios
+variations:
+  single_child_professional:
+    one_off_costs: 10000
+    annual_costs: 12000
+    childcare_premium: 0.20           # 20% higher for professional childcare
+  
+  multiple_children_family:
+    scaling_approach: "economies_of_scale"
+    shared_costs_percentage: 0.30     # 30% of costs can be shared
+  
+  single_parent:
+    cost_multiplier: 1.2              # 20% higher costs
+    government_support_multiplier: 1.5 # Higher government support
+  
+  special_needs:
+    cost_multiplier: 1.5              # 50% higher costs
+    additional_support_costs: 5000    # Annual additional support
+
+# Validation rules
+validation:
+  min_one_off_cost: 3000
+  max_one_off_cost: 25000
+  min_annual_cost: 5000
+  max_annual_cost: 30000
+  valid_start_years: [5, 6, 7, 8, 9, 10] 

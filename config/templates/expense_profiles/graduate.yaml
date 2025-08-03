@@ -1,0 +1,87 @@
+template_type: "expense_profile"
+version: "1.0.0"
+metadata:
+  name: "Graduate Lifestyle"
+  description: "Optimized spending for recent graduate with conservative lifestyle"
+  suitable_for: ["uk", "us", "uae"]
+  author: "Financial Planning System"
+
+# Monthly base expenses (in GBP)
+monthly_expenses:
+  # Essential living costs
+  food_grocery: 300
+  food_dining: 150
+  transport: 150
+  
+  # Lifestyle expenses
+  entertainment: 200
+  clothing: 100
+  personal_care: 75
+  subscriptions: 50
+  miscellaneous: 200
+  
+  # Professional expenses
+  professional_development: 50
+  work_expenses: 25
+
+# Annual expenses (in GBP)
+annual_expenses:
+  travel: 3000
+  gifts_charity: 1500
+  insurance_extras: 600
+  professional_memberships: 300
+
+# Lifestyle progression - expenses grow with income/career stage
+progression:
+  type: "hybrid"  # Combination of income percentage and fixed amounts
+  
+  # Base lifestyle inflation
+  annual_inflation_rate: 0.025  # 2.5% annual increase
+  
+  # Career stage adjustments
+  adjustments_by_year:
+    1-2: 
+      income_percentage: 0.40     # 40% of after-tax income on lifestyle
+      lifestyle_factor: 0.85      # 85% of base expenses (frugal graduate)
+    3-5: 
+      income_percentage: 0.45     # 45% of after-tax income
+      lifestyle_factor: 1.0       # 100% of base expenses (normal)
+    6+: 
+      income_percentage: 0.50     # 50% of after-tax income
+      lifestyle_factor: 1.15      # 115% of base expenses (improved lifestyle)
+
+# Location-specific adjustments
+location_multipliers:
+  uk: 1.0          # Base multiplier
+  us_seattle: 1.2  # 20% higher expenses in Seattle
+  us_new_york: 1.4 # 40% higher expenses in NYC
+  uae_dubai: 0.9   # 10% lower expenses in Dubai
+
+# Expense categories for tracking
+categories:
+  essential:
+    - food_grocery
+    - transport
+    - insurance_extras
+  
+  lifestyle:
+    - food_dining
+    - entertainment
+    - clothing
+    - travel
+  
+  professional:
+    - professional_development
+    - professional_memberships
+    - work_expenses
+  
+  discretionary:
+    - subscriptions
+    - miscellaneous
+    - gifts_charity
+
+# Validation rules
+validation:
+  min_monthly_total: 500      # Minimum viable monthly expenses
+  max_monthly_total: 5000     # Maximum reasonable monthly expenses for graduate
+  max_income_percentage: 0.80 # Never spend more than 80% of after-tax income 

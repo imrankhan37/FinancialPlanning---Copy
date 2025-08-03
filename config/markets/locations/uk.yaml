@@ -1,0 +1,231 @@
+template_type: "location_market"
+version: "1.0.0"
+metadata:
+  name: "United Kingdom Market"
+  description: "Comprehensive UK market data and economic indicators"
+  currency: "GBP"
+  region: "Europe"
+  author: "Financial Planning System"
+
+# Core market information
+market:
+  country: "United Kingdom"
+  country_code: "GB"
+  primary_currency: "GBP"
+  language: "English"
+  timezone: "GMT/BST"
+  
+  # Economic classification
+  economic_status: "developed"
+  market_type: "mature"
+  financial_center: true
+
+# Economic environment and forecasts
+economy:
+  # GDP and growth projections
+  gdp_growth_forecast: 
+    2025: 0.020   # 2.0% growth
+    2026: 0.021   # 2.1% growth
+    2027: 0.022   # 2.2% growth
+    2028: 0.022   # 2.2% growth
+    long_term: 0.020  # Long-term trend
+  
+  # Inflation projections (Bank of England targets)
+  inflation_forecast:
+    2025: 0.032   # 3.2% (current elevated level)
+    2026: 0.022   # 2.2% (moving toward target)
+    2027: 0.020   # 2.0% (BoE target)
+    2028: 0.020   # 2.0% (stable at target)
+    long_term: 0.020  # Long-term target
+  
+  # Interest rate environment (Bank of England base rate)
+  interest_rates:
+    base_rate_current: 0.050   # 5.0% current BoE rate
+    forecast:
+      2025: 0.045   # 4.5%
+      2026: 0.040   # 4.0%
+      2027: 0.035   # 3.5%
+      2028: 0.030   # 3.0%
+      long_term: 0.025  # 2.5% neutral rate
+  
+  # Employment data
+  employment:
+    unemployment_rate: 0.042    # 4.2%
+    employment_rate: 0.759      # 75.9%
+    youth_unemployment: 0.115   # 11.5%
+
+# Currency and exchange rates
+currency:
+  primary: "GBP"
+  
+  # Exchange rate forecasts (GBP base)
+  exchange_rates:
+    current:
+      USD: 1.26    # £1 = $1.26
+      EUR: 1.17    # £1 = €1.17
+      CAD: 1.71    # £1 = C$1.71
+      AUD: 1.86    # £1 = A$1.86
+    
+    volatility:
+      USD: 0.12    # 12% annual volatility vs USD
+      EUR: 0.08    # 8% annual volatility vs EUR
+
+# Regional cost variations
+regional_data:
+  # Housing cost multipliers (London = 1.0 baseline)
+  housing_costs:
+    london: 1.00              # Baseline
+    south_east: 0.80          # 20% lower than London
+    south_west: 0.70          # 30% lower
+    east_england: 0.75        # 25% lower
+    west_midlands: 0.60       # 40% lower
+    east_midlands: 0.55       # 45% lower
+    yorkshire_humber: 0.55    # 45% lower
+    north_west: 0.60          # 40% lower
+    north_east: 0.50          # 50% lower
+    scotland: 0.60            # 40% lower
+    wales: 0.55               # 45% lower
+    northern_ireland: 0.50    # 50% lower
+  
+  # General living cost multipliers
+  living_costs:
+    london: 1.00              # Baseline
+    major_cities: 0.90        # 10% lower than London
+    regional_cities: 0.80     # 20% lower
+    towns: 0.75               # 25% lower
+    rural: 0.70               # 30% lower
+
+# Living costs (monthly averages in GBP)
+living_costs:
+  # Housing (rental market)
+  housing:
+    rent_monthly: 2100        # Average professional rental
+    utilities_monthly: 150    # Gas, electricity, water
+    council_tax_monthly: 180  # Average council tax
+    insurance_monthly: 25     # Contents insurance
+  
+  # Transportation
+  transport:
+    public_transport_monthly: 150
+    car_costs_monthly: 400    # Insurance, fuel, maintenance
+    parking_monthly: 200
+  
+  # Healthcare
+  healthcare:
+    nhs_free: true
+    private_insurance_monthly: 120
+    dental_annual: 200
+    optical_annual: 150
+  
+  # General living
+  food_grocery_monthly: 300
+  food_dining_monthly: 150
+  entertainment_monthly: 200
+  clothing_monthly: 100
+  personal_care_monthly: 75
+
+# Employment market
+employment_market:
+  # Salary ranges by sector (annual, GBP)
+  salary_ranges:
+    technology:
+      graduate: [35000, 45000]
+      mid_level: [50000, 80000]
+      senior: [80000, 120000]
+      principal: [120000, 200000]
+    
+    finance:
+      graduate: [40000, 50000]
+      mid_level: [55000, 90000]
+      senior: [90000, 150000]
+      director: [150000, 300000]
+    
+    consulting:
+      graduate: [38000, 48000]
+      consultant: [60000, 85000]
+      senior_consultant: [85000, 120000]
+      principal: [120000, 200000]
+  
+  # Employment benefits (typical)
+  benefits:
+    pension_contribution: [0.03, 0.12]  # 3% - 12% employer contribution
+    bonus_ranges: [0.05, 0.25]          # 5% - 25% of salary
+    equity_participation: [0.10, 0.40]  # 10% - 40% in tech companies
+    private_healthcare: 0.80            # 80% of companies offer
+
+# Tax environment
+tax_system: "uk_income_tax_ni"
+
+# Investment environment
+investment_environment:
+  # Tax-advantaged accounts (2024/25 allowances)
+  accounts:
+    isa:
+      annual_allowance: 20000
+      types: ["cash", "stocks_shares", "innovative_finance"]
+      tax_treatment: "tax_free"
+    
+    lisa:
+      annual_allowance: 4000
+      government_bonus: 0.25   # 25% bonus
+      withdrawal_penalties: 0.25 # 25% penalty for non-qualifying withdrawals
+      eligible_uses: ["first_home", "retirement"]
+    
+    pension:
+      annual_allowance: 60000  # Subject to income restrictions
+      tax_relief: ["20%", "40%", "45%"]  # Matches marginal rate
+  
+  # Investment costs and accessibility
+  investment_costs:
+    platform_fees: [0.0015, 0.0045]  # 0.15% - 0.45% annual
+    fund_fees: [0.0010, 0.0150]      # 0.10% - 1.50% annual
+    trading_costs: [0, 11.95]        # £0 - £11.95 per trade
+
+# Property market
+property_market:
+  # Average property prices by region (2024)
+  average_prices:
+    london: 735000
+    south_east: 425000
+    south_west: 380000
+    national_average: 300000
+  
+  # Market dynamics
+  price_growth_forecast:
+    2025: 0.01    # 1% growth (modest)
+    2026: 0.04    # 4% growth (recovery)
+    2027: 0.06    # 6% growth (strong market)
+    2028: 0.06    # 6% growth (continued strength)
+    long_term: 0.03  # 3% long-term average
+  
+  # Transaction costs
+  transaction_costs:
+    stamp_duty_threshold: 250000     # No stamp duty below this
+    legal_fees: [1500, 3000]         # £1,500 - £3,000
+    survey_costs: [400, 1500]        # £400 - £1,500
+    estate_agent_fees: 0.015         # 1.5% of sale price
+
+# Quality of life indicators
+quality_of_life:
+  healthcare_ranking: 18        # Global ranking
+  education_ranking: 15         # Global ranking
+  safety_index: 67             # Global safety index
+  environmental_quality: 74    # Environmental performance index
+  
+  # Lifestyle factors
+  work_life_balance: 6.5       # Out of 10
+  average_commute_minutes: 58   # Average daily commute
+  internet_speed_mbps: 67       # Average broadband speed
+
+# Regulatory environment
+regulations:
+  minimum_wage: 11.44          # 2025 rate
+  working_hours_max: 48        # Per week average
+  holiday_entitlement: 28      # Days including bank holidays
+  
+# Validation rules
+validation:
+  currency_code: "GBP"
+  inflation_range: [0.00, 0.10]    # 0% - 10% reasonable range
+  growth_range: [-0.05, 0.08]      # -5% to +8% reasonable range
+  unemployment_range: [0.02, 0.15] # 2% - 15% reasonable range 

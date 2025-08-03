@@ -1,0 +1,85 @@
+template_type: "salary_progression"
+version: "1.0.0"
+extends: "tech_worker"  # Inherit from base tech_worker template
+
+metadata:
+  name: "Senior Tech Worker Career Growth"
+  description: "Advanced tech career progression for senior/staff level engineers"
+  suitable_for: ["uk", "us", "uae"]
+  author: "Financial Planning System"
+
+# Override specific values from base template
+overrides:
+  progression:
+    base_salary: 80000      # Higher starting salary for senior role
+    
+    # Override growth rates for senior track
+    growth_by_year:
+      1: 0.06    # 6% first year (lower than base, already senior)
+      2: 0.10    # 10% second year
+      3: 0.12    # 12% promotion to staff
+      4: 0.08    # 8% steady senior growth
+      5: 0.07    # 7% continued growth
+      6-10: 0.06 # 6% staff level growth
+
+  bonus:
+    # Higher bonus structure for senior level
+    base_rate: 0.20        # 20% base bonus (vs 15% in base template)
+    
+    rates_by_year:
+      1-2: 0.15    # 15% initial senior years
+      3-5: 0.20    # 20% staff level
+      6+: 0.25     # 25% principal/senior staff level
+
+  equity:
+    # Higher equity for senior roles
+    base_rate: 0.35       # 35% base RSU grant (vs 25% in base)
+    
+    rates_by_year:
+      1: 0.30      # 30% senior hire package
+      2: 0.35      # 35% full senior package
+      3: 0.40      # 40% staff promotion
+      4: 0.45      # 45% staff level
+      5+: 0.50     # 50% principal/senior staff level
+    
+    # Additional equity events for senior track
+    events:
+      - year: 2
+        type: "senior_refresh_grant"
+        additional_percentage: 0.05
+        description: "Senior level refresh grant"
+      
+      - year: 3
+        type: "staff_promotion_grant"
+        additional_percentage: 0.15
+        description: "Promotion to staff level"
+      
+      - year: 4
+        type: "ipo_multiplier"
+        multiplier: 4.0
+        description: "IPO event 4x multiplier for senior equity"
+      
+      - year: 6
+        type: "retention_grant"
+        additional_percentage: 0.20
+        description: "Senior retention package"
+
+# Senior-specific performance adjustments
+performance_adjustments:
+  enabled: true
+  high_performer:
+    salary_multiplier: 1.20   # 20% salary boost for high-performing senior
+    bonus_multiplier: 1.75    # 75% bonus boost
+    equity_multiplier: 1.50   # 50% equity boost
+  
+  exceptional_performer:      # New tier for senior level
+    salary_multiplier: 1.30   # 30% salary boost
+    bonus_multiplier: 2.0     # 100% bonus boost  
+    equity_multiplier: 2.0    # 100% equity boost
+
+# Higher validation limits for senior roles
+validation:
+  min_salary: 60000
+  max_salary: 1000000     # Higher ceiling for senior tech
+  max_bonus_rate: 1.0     # Senior can have 100% bonuses
+  max_equity_rate: 1.5    # 150% equity grants possible for senior roles 

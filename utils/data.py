@@ -1,6 +1,6 @@
 """
 Data loading and processing utilities for the financial planning dashboard.
-Includes enhanced caching for performance optimization with unified models.
+Uses the new template-driven system for scenario generation.
 """
 
 import streamlit as st
@@ -10,14 +10,12 @@ from typing import Dict, List, Optional, Tuple, Any
 from datetime import datetime
 import time
 import functools
+import sys
+from pathlib import Path
 
-# Import unified financial planner functions
-from financial_planner_pydantic import (
-    run_unified_scenario,
-    run_unified_international_scenario,
-    run_unified_delayed_relocation_scenario
-)
-from config import CONFIG
+# Import the new template-driven financial planner
+from financial_planner_template_driven import TemplateFinancialPlanner
+from config.template_engine import TemplateEngine, GenericCalculationEngine
 
 # Import unified models and helpers
 from models.unified_financial_data import (
@@ -25,7 +23,6 @@ from models.unified_financial_data import (
     CurrencyValue, Currency, Jurisdiction, FinancialPhase
 )
 from models.unified_helpers import (
-    create_scenario_metadata_from_name,
     get_performance_metrics,
     clear_performance_caches
 )
@@ -34,361 +31,644 @@ from models.unified_helpers import (
 @st.cache_data(ttl=300, max_entries=10)
 def load_all_scenarios() -> Dict[str, UnifiedFinancialScenario]:
     """
-    Load all financial scenarios with enhanced caching for performance using unified models.
-    
+    Load all available scenarios using the template-driven financial planner with proper ID mapping.
+
     Returns:
-        Dict containing all scenario data with unified structure.
+        Dictionary of scenario_id -> UnifiedFinancialScenario objects
     """
-    scenarios = {}
-    
-    # Progress tracking
-    progress_bar = st.progress(0)
-    status_text = st.empty()
-    
     try:
-        # UK Scenarios (fastest to load) - using unified models
-        status_text.text("Loading UK scenarios...")
-        scenarios['UK_Scenario_A'] = run_unified_scenario('A', CONFIG)
-        scenarios['UK_Scenario_B'] = run_unified_scenario('B', CONFIG)
-        progress_bar.progress(0.15)
-        
-        # International Scenarios
-        status_text.text("Loading international scenarios...")
-        international_scenarios = [
-            ('seattle', 'uk_home'), ('seattle', 'local_home'),
-            ('new_york', 'uk_home'), ('new_york', 'local_home'),
-            ('dubai', 'uk_home'), ('dubai', 'local_home')
-        ]
-        
-        for i, (location, housing_strategy) in enumerate(international_scenarios):
-            try:
-                scenario = run_unified_international_scenario(location, CONFIG, housing_strategy)
-                # Convert location to proper title case (e.g., "new_york" -> "New York")
-                location_display = location.replace('_', ' ').title()
-                display_name = f"{location_display} {housing_strategy.replace('_', ' ').title()}"
-                scenarios[display_name] = scenario
-                
-                # Update progress
-                progress = 0.15 + (0.35 * (i + 1) / len(international_scenarios))
-                progress_bar.progress(progress)
-                
-            except Exception as e:
-                st.warning(f"Failed to load international scenario {location} {housing_strategy}: {str(e)}")
-        
-        # Delayed Relocation Scenarios (more complex)
-        status_text.text("Loading delayed relocation scenarios...")
-        delayed_scenarios = [
-            'seattle_year4_uk_home', 'seattle_year4_local_home',
-            'seattle_year5_uk_home', 'seattle_year5_local_home',
-            'new_york_year4_uk_home', 'new_york_year4_local_home',
-            'new_york_year5_uk_home', 'new_york_year5_local_home',
-            'dubai_year4_uk_home', 'dubai_year4_local_home',
-            'dubai_year5_uk_home', 'dubai_year5_local_home'
-        ]
-        
-        for i, scenario_name in enumerate(delayed_scenarios):
-            try:
-                # Use unified scenario generation
-                unified_scenario = run_unified_delayed_relocation_scenario(scenario_name, CONFIG)
-                # Convert scenario name to display format
-                display_name = scenario_name.replace('_', ' ').title()
-                scenarios[display_name] = unified_scenario
-                
-                # Update progress
-                progress = 0.5 + (0.5 * (i + 1) / len(delayed_scenarios))
-                progress_bar.progress(progress)
-                
-            except Exception as e:
-                st.warning(f"Failed to load scenario {scenario_name}: {str(e)}")
-        
-        status_text.text("Data loading complete!")
-        time.sleep(0.5)  # Brief pause to show completion
-        
+        with st.spinner("Loading template-driven scenarios..."):
+            planner = TemplateFinancialPlanner()
+            scenario_ids = planner.get_available_scenarios()
+
+            scenarios = {}
+
+            # Progress tracking
+            progress_bar = st.progress(0)
+            total_scenarios = len(scenario_ids)
+
+            for i, scenario_id in enumerate(scenario_ids):
+                try:
+                    # Load and run the scenario
+                    unified_scenario = planner.run_scenario(scenario_id)
+
+                    # Store using both the scenario ID and the display name as keys
+                    scenarios[scenario_id] = unified_scenario
+
+                    # Also store using display name for backward compatibility
+                    if unified_scenario.name != scenario_id:
+                        scenarios[unified_scenario.name] = unified_scenario
+
+                    # Update progress
+                    progress_bar.progress((i + 1) / total_scenarios)
+
+                except Exception as e:
+                    st.warning(f"Failed to load scenario {scenario_id}: {str(e)}")
+                    continue
+
+            progress_bar.empty()
+
+            print(f"DEBUG: Loaded {len(scenarios)} scenario entries")
+            print(f"DEBUG: Scenario keys: {list(scenarios.keys())}")
+
+            return scenarios
+
     except Exception as e:
-        st.error(f"Error loading scenarios: {str(e)}")
+        st.error(f"Failed to load scenarios: {str(e)}")
         return {}
-    
-    finally:
+
+
+@st.cache_data(ttl=600, max_entries=5)
+def get_enriched_scenario_metadata() -> Dict[str, Dict[str, Any]]:
+    """
+    Get enriched scenario metadata with template composition details.
+
+    Returns:
+        Dict mapping scenario IDs to enriched metadata including:
+        - Template composition (salary, housing, investment, tax)
+        - Configuration parameters
+        - Validation status
+        - Phase information
+        - Jurisdiction details
+    """
+    metadata = {}
+    planner = TemplateFinancialPlanner()
+
+    try:
+        available_scenarios = planner.get_available_scenarios()
+
+        for scenario_id in available_scenarios:
+            try:
+                # Get basic summary
+                summary = planner.get_scenario_summary(scenario_id)
+
+                if 'error' not in summary:
+                    # Enrich with additional template metadata
+                    metadata[scenario_id] = {
+                        **summary,
+                        'scenario_id': scenario_id,
+                        'template_composition': summary.get('components', {}),
+                        'phase_type': summary.get('phase', 'Unknown'),
+                        'validation_status': 'unknown',  # Will be updated by validation
+                        'configuration_summary': _get_configuration_summary(planner, scenario_id),
+                        'template_types': _get_template_types(summary.get('components', {}))
+                    }
+                else:
+                    metadata[scenario_id] = {
+                        'scenario_id': scenario_id,
+                        'name': scenario_id,
+                        'error': summary['error'],
+                        'validation_status': 'error'
+                    }
+
+            except Exception as e:
+                metadata[scenario_id] = {
+                    'scenario_id': scenario_id,
+                    'name': scenario_id,
+                    'error': str(e),
+                    'validation_status': 'error'
+                }
+
+        return metadata
+
+    except Exception as e:
+        st.error(f"Failed to get enriched scenario metadata: {str(e)}")
+        return {}
+
+
+@st.cache_data(ttl=300, max_entries=5)
+def validate_all_scenarios() -> Dict[str, Dict[str, Any]]:
+    """
+    Validate all available scenarios and return detailed status.
+
+    Returns:
+        Dict mapping scenario IDs to validation results:
+        - valid: bool
+        - message: str
+        - errors: List[str] (if any)
+        - warnings: List[str] (if any)
+    """
+    validation_results = {}
+    planner = TemplateFinancialPlanner()
+
+    try:
+        available_scenarios = planner.get_available_scenarios()
+
+        progress_bar = st.progress(0)
+        status_text = st.empty()
+
+        for i, scenario_id in enumerate(available_scenarios):
+            status_text.text(f"Validating {scenario_id}...")
+
+            try:
+                # Validate scenario
+                result = planner.validate_scenario(scenario_id)
+                validation_results[scenario_id] = result
+
+                # Update progress
+                progress = (i + 1) / len(available_scenarios)
+                progress_bar.progress(progress)
+
+            except Exception as e:
+                validation_results[scenario_id] = {
+                    'scenario_id': scenario_id,
+                    'valid': False,
+                    'message': f"Validation failed: {str(e)}",
+                    'errors': [str(e)]
+                }
+
         progress_bar.empty()
         status_text.empty()
-    
-    return scenarios
+
+        return validation_results
+
+    except Exception as e:
+        st.error(f"Failed to validate scenarios: {str(e)}")
+        return {}
 
 
-def filter_scenarios(
-    _all_scenarios: Dict[str, UnifiedFinancialScenario],
-    selected_scenarios: List[str],
-    year_range: Tuple[int, int]
-) -> Dict[str, UnifiedFinancialScenario]:
+@st.cache_data(ttl=600, max_entries=5)
+def get_template_configuration_summary() -> Dict[str, Dict[str, Any]]:
     """
-    Filter scenarios based on selection and year range with caching using unified models.
-    
-    Args:
-        all_scenarios: All available scenarios with unified structure
-        selected_scenarios: List of selected scenario names
-        year_range: Tuple of (start_year, end_year)
-    
+    Get summary of template configurations for each scenario.
+
     Returns:
-        Filtered scenarios dictionary with unified structure
+        Dict mapping scenario IDs to configuration summaries:
+        - parameters: key configuration values
+        - template_files: source template files
+        - inheritance_tree: template composition hierarchy
     """
-    filtered = {}
-    
-    for scenario_name in selected_scenarios:
-        if scenario_name in _all_scenarios:
-            scenario = _all_scenarios[scenario_name]
-            
-            # Filter data points by year range
-            filtered_data_points = []
-            for point in scenario.data_points:
-                if year_range[0] <= point.year <= year_range[1]:
-                    filtered_data_points.append(point)
-            
-            # Create filtered scenario with unified structure
-            filtered_scenario = UnifiedFinancialScenario(
-                name=scenario.name,
-                description=scenario.description,
-                phase=scenario.phase,
-                data_points=filtered_data_points,
-                metadata=scenario.metadata
+    config_summaries = {}
+    planner = TemplateFinancialPlanner()
+
+    try:
+        available_scenarios = planner.get_available_scenarios()
+
+        for scenario_id in available_scenarios:
+            try:
+                # Load scenario configuration
+                config = planner.template_engine.load_scenario(scenario_id)
+
+                config_summaries[scenario_id] = {
+                    'scenario_parameters': {
+                        'start_year': config.planning_parameters.get('start_year'),
+                        'duration_years': config.planning_parameters.get('duration_years'),
+                        'start_age': config.planning_parameters.get('start_age')
+                    },
+                    'template_files': {
+                        'salary_progression': config.salary_progression.get('template'),
+                        'housing_strategy': config.housing_strategy.get('template'),
+                        'expense_profile': config.expense_profile.get('template'),
+                        'investment_strategy': config.investment_strategy.get('template') if config.investment_strategy else None,
+                        'tax_system': config.tax_system.get('tax_system_id')
+                    },
+                    'key_parameters': _extract_key_parameters(config),
+                    'template_inheritance': _build_inheritance_tree(config)
+                }
+
+            except Exception as e:
+                config_summaries[scenario_id] = {
+                    'error': str(e),
+                    'scenario_parameters': {},
+                    'template_files': {},
+                    'key_parameters': {},
+                    'template_inheritance': {}
+                }
+
+        return config_summaries
+
+    except Exception as e:
+        st.error(f"Failed to get template configuration summaries: {str(e)}")
+        return {}
+
+
+def _get_configuration_summary(planner: TemplateFinancialPlanner, scenario_id: str) -> Dict[str, Any]:
+    """Extract key configuration parameters for display."""
+    try:
+        config = planner.template_engine.load_scenario(scenario_id)
+        return {
+            'duration': f"{config.planning_parameters.get('duration_years', 'Unknown')} years",
+            'start_year': config.planning_parameters.get('start_year', 'Unknown'),
+            'start_age': config.planning_parameters.get('start_age', 'Unknown'),
+            'tax_system': config.tax_system.get('tax_system_id', 'Unknown'),
+            'num_phases': len(config.phases) if hasattr(config, 'phases') else 1
+        }
+    except Exception:
+        return {'error': 'Could not load configuration'}
+
+
+def _get_template_types(components: Dict[str, str]) -> List[str]:
+    """Extract template types from component composition."""
+    types = []
+    if components.get('salary'):
+        types.append('salary_progression')
+    if components.get('housing'):
+        types.append('housing_strategy')
+    if components.get('expenses'):
+        types.append('expense_profile')
+    if components.get('investments'):
+        types.append('investment_strategy')
+    if components.get('tax_system'):
+        types.append('tax_system')
+    return types
+
+
+def _extract_key_parameters(config) -> Dict[str, Any]:
+    """Extract key parameters from scenario configuration."""
+    try:
+        params = {}
+
+        # Salary progression parameters
+        if hasattr(config, 'salary_progression') and config.salary_progression:
+            salary_params = config.salary_progression.get('parameters', {})
+            if salary_params:
+                params['salary'] = {
+                    'base_salary': salary_params.get('base_salary'),
+                    'growth_rate': salary_params.get('annual_increase_rate'),
+                    'bonus_rate': salary_params.get('bonus_rate')
+                }
+
+        # Housing parameters
+        if hasattr(config, 'housing_strategy') and config.housing_strategy:
+            housing_params = config.housing_strategy.get('parameters', {})
+            if housing_params:
+                params['housing'] = {
+                    'purchase_year': housing_params.get('purchase_year'),
+                    'deposit_pct': housing_params.get('deposit_pct'),
+                    'property_price': housing_params.get('property_price')
+                }
+
+        # Investment parameters
+        if hasattr(config, 'investment_strategy') and config.investment_strategy:
+            investment_params = config.investment_strategy.get('parameters', {})
+            if investment_params:
+                params['investments'] = {
+                    'return_rate': investment_params.get('annual_return_rate'),
+                    'risk_level': investment_params.get('risk_level')
+                }
+
+        return params
+
+    except Exception:
+        return {}
+
+
+def _build_inheritance_tree(config) -> Dict[str, Any]:
+    """Build template inheritance tree for visualization."""
+    try:
+        tree = {
+            'scenario': config.scenario_metadata.get('name', 'Unknown'),
+            'templates': {}
+        }
+
+        # Add template composition
+        if hasattr(config, 'salary_progression') and config.salary_progression:
+            tree['templates']['salary_progression'] = {
+                'template': config.salary_progression.get('template'),
+                'extends': config.salary_progression.get('extends')
+            }
+
+        if hasattr(config, 'housing_strategy') and config.housing_strategy:
+            tree['templates']['housing_strategy'] = {
+                'template': config.housing_strategy.get('template'),
+                'extends': config.housing_strategy.get('extends')
+            }
+
+        if hasattr(config, 'expense_profile') and config.expense_profile:
+            tree['templates']['expense_profile'] = {
+                'template': config.expense_profile.get('template'),
+                'extends': config.expense_profile.get('extends')
+            }
+
+        if hasattr(config, 'investment_strategy') and config.investment_strategy:
+            tree['templates']['investment_strategy'] = {
+                'template': config.investment_strategy.get('template'),
+                'extends': config.investment_strategy.get('extends')
+            }
+
+        return tree
+
+    except Exception:
+        return {'error': 'Could not build inheritance tree'}
+
+
+def filter_scenarios(scenarios: Dict[str, Any],
+    selected_scenarios: List[str],
+                    year_range: Tuple[int, int]) -> Dict[str, Any]:
+    """
+    Filter scenarios by selection and year range with enhanced debugging.
+
+    Args:
+        scenarios: Dictionary of all scenarios
+        selected_scenarios: List of selected scenario names/IDs
+        year_range: Tuple of (start_year, end_year)
+
+    Returns:
+        Filtered scenarios dictionary
+    """
+    try:
+        if not scenarios:
+            print("DEBUG: No scenarios provided to filter")
+            return {}
+
+        if not selected_scenarios:
+            print("DEBUG: No scenarios selected")
+            return {}
+
+        print(f"DEBUG: Filtering {len(scenarios)} scenarios, {len(selected_scenarios)} selected")
+        print(f"DEBUG: Available scenario keys: {list(scenarios.keys())}")
+        print(f"DEBUG: Selected scenarios: {selected_scenarios}")
+
+        # Handle both scenario IDs and scenario names
+        filtered_scenarios = {}
+
+        for scenario_key, scenario_data in scenarios.items():
+            scenario_name = getattr(scenario_data, 'name', scenario_key)
+
+            # Check if this scenario is selected (by key or name)
+            is_selected = (
+                scenario_key in selected_scenarios or
+                scenario_name in selected_scenarios or
+                any(selected in scenario_key or selected in scenario_name
+                    for selected in selected_scenarios)
             )
-            filtered[scenario_name] = filtered_scenario
-    return filtered
+
+            if is_selected:
+                print(f"DEBUG: Including scenario {scenario_key} (name: {scenario_name})")
+
+                # Filter by year range if scenario has data points
+                if hasattr(scenario_data, 'data_points') and scenario_data.data_points:
+                    # Use relative year indexing (1-based years to 0-based indexing)
+                    start_idx = max(0, year_range[0] - 1)  # Convert 1-based to 0-based
+                    end_idx = min(len(scenario_data.data_points), year_range[1])
+
+                    print(f"DEBUG: Year range {year_range}, start_idx={start_idx}, end_idx={end_idx}, data_points={len(scenario_data.data_points)}")
+
+                    if start_idx < len(scenario_data.data_points) and end_idx > start_idx:
+                        # Create a filtered copy with year-range data
+                        filtered_data = type(scenario_data)(
+                            name=scenario_data.name,
+                            description=getattr(scenario_data, 'description', ''),
+                            phase=scenario_data.phase,
+                            data_points=scenario_data.data_points[start_idx:end_idx],
+                            metadata=getattr(scenario_data, 'metadata', None)
+                        )
+                        filtered_scenarios[scenario_key] = filtered_data
+                        print(f"DEBUG: Filtered {scenario_key} to years {year_range[0]}-{year_range[1]} ({len(filtered_data.data_points)} data points)")
+                    else:
+                        print(f"DEBUG: Skipping {scenario_key} - invalid year range: start_idx={start_idx}, end_idx={end_idx}, data_points={len(scenario_data.data_points)}")
+                else:
+                    print(f"DEBUG: Including {scenario_key} without year filtering (no data points)")
+                    filtered_scenarios[scenario_key] = scenario_data
+
+        print(f"DEBUG: Final filtered scenarios: {len(filtered_scenarios)} scenarios")
+        return filtered_scenarios
+
+    except Exception as e:
+        print(f"ERROR: Failed to filter scenarios: {e}")
+        import traceback
+        traceback.print_exc()
+        return {}
 
 
 def filter_scenarios_by_type(
     all_scenarios: Dict[str, UnifiedFinancialScenario],
-    uk_only: bool = False,
-    international_only: bool = False,
-    tax_free_only: bool = False,
-    delayed_relocation_only: bool = False
+    scenario_type: Optional[str] = None
 ) -> Dict[str, UnifiedFinancialScenario]:
     """
-    Filter scenarios based on type filters using unified models.
-    
+    Filter scenarios by type using the new unified model phase and jurisdiction attributes.
+
     Args:
-        all_scenarios: All available scenarios with unified structure
-        uk_only: Show only UK scenarios
-        international_only: Show only international scenarios
-        tax_free_only: Show only tax-free scenarios
-        delayed_relocation_only: Show only delayed relocation scenarios
-    
+        all_scenarios: Dictionary of all scenarios
+        scenario_type: Type filter ('uk_only', 'international', 'tax_free', 'delayed_relocation')
+
     Returns:
-        Filtered scenarios dictionary with unified structure
+        Filtered dictionary of scenarios
     """
+    if not scenario_type or scenario_type == 'all':
+        return all_scenarios
+
     filtered = {}
-    
-    for scenario_name, scenario in all_scenarios.items():
-        include_scenario = True
-        
-        # UK scenarios filter
-        if uk_only:
-            if not scenario_name.startswith('UK_Scenario'):
-                include_scenario = False
-        
-        # International scenarios filter
-        if international_only:
-            if scenario_name.startswith('UK_Scenario'):
-                include_scenario = False
-        
-        # Tax-free scenarios filter (Dubai scenarios)
-        if tax_free_only:
-            if not 'Dubai' in scenario_name:
-                include_scenario = False
-        
-        # Delayed relocation scenarios filter
-        if delayed_relocation_only:
-            if not any(keyword in scenario_name for keyword in ['Year4', 'Year5']):
-                include_scenario = False
-        
+
+    for name, scenario in all_scenarios.items():
+        include_scenario = False
+
+        if scenario_type == 'uk_only':
+            # UK only scenarios
+            include_scenario = (scenario.phase == FinancialPhase.UK_ONLY or
+                              scenario.jurisdiction == Jurisdiction.UK)
+
+        elif scenario_type == 'international':
+            # International scenarios (not UK only)
+            include_scenario = (scenario.phase != FinancialPhase.UK_ONLY and
+                              scenario.jurisdiction != Jurisdiction.UK)
+
+        elif scenario_type == 'tax_free':
+            # Tax-free jurisdictions (UAE)
+            include_scenario = scenario.jurisdiction == Jurisdiction.UAE
+
+        elif scenario_type == 'delayed_relocation':
+            # Multi-phase scenarios with relocation
+            include_scenario = scenario.phase in [
+                FinancialPhase.UK_THEN_INTERNATIONAL,
+                FinancialPhase.INTERNATIONAL_THEN_UK
+            ]
+
         if include_scenario:
-            filtered[scenario_name] = scenario
-    
+            filtered[name] = scenario
+
     return filtered
 
 
 def calculate_key_metrics(scenarios: Dict[str, UnifiedFinancialScenario]) -> Dict[str, Any]:
     """
-    Calculate key performance metrics for selected scenarios with caching using unified models.
-    
+    Calculate key performance metrics across scenarios using unified models.
+
     Args:
-        scenarios: Dictionary of scenario data with unified structure
-    
+        scenarios: Dictionary of scenarios to analyze
+
     Returns:
-        Dictionary containing calculated metrics
+        Dictionary containing aggregated metrics
     """
     if not scenarios:
         return {
-            'max_net_worth': 0,
-            'avg_annual_savings': 0,
-            'total_tax_burden': 0,
-            'scenarios_count': 0
+            'total_scenarios': 0,
+            'avg_final_net_worth': 0,
+            'avg_total_savings': 0,
+            'avg_total_tax': 0,
+            'best_scenario': None,
+            'metrics_by_scenario': {}
         }
-    
-    max_net_worth = 0
+
+    metrics = {
+        'total_scenarios': len(scenarios),
+        'metrics_by_scenario': {}
+    }
+
+    total_net_worth = 0
     total_savings = 0
     total_tax = 0
-    savings_count = 0
-    
+    best_net_worth = 0
+    best_scenario = None
+
     for scenario_name, scenario in scenarios.items():
-        if not scenario.data_points:
-            continue
-        
-        # Calculate net worth metrics using unified structure
-        for point in scenario.data_points:
-            net_worth = point.net_worth_gbp
-            max_net_worth = max(max_net_worth, net_worth)
-            
-            # Calculate savings using unified structure
-            savings = point.annual_savings_gbp
-            total_savings += savings
-            savings_count += 1
-            
-            # Calculate tax burden using unified structure
-            tax = point.total_tax_gbp
-            total_tax += tax
-    
-    return {
-        'max_net_worth': max_net_worth,
-        'avg_annual_savings': total_savings / max(1, savings_count),
-        'total_tax_burden': total_tax,
-        'scenarios_count': len(scenarios)
-    }
+        if scenario.data_points:
+            # Use unified methods for calculations
+            final_net_worth = scenario.get_final_net_worth_gbp()
+            total_savings_scenario = sum(point.net_worth.total_gbp - (point.net_worth.total_gbp - point.annual_savings.total_gbp)
+                                       for point in scenario.data_points if hasattr(point, 'annual_savings'))
+            total_tax_scenario = sum(point.tax.total_gbp for point in scenario.data_points)
+
+            # Track metrics per scenario
+            metrics['metrics_by_scenario'][scenario_name] = {
+                'final_net_worth': final_net_worth,
+                'total_savings': total_savings_scenario,
+                'total_tax': total_tax_scenario,
+                'data_points': len(scenario.data_points)
+            }
+
+            # Aggregate totals
+            total_net_worth += final_net_worth
+            total_savings += total_savings_scenario
+            total_tax += total_tax_scenario
+
+            # Track best scenario
+            if final_net_worth > best_net_worth:
+                best_net_worth = final_net_worth
+                best_scenario = scenario_name
+
+    # Calculate averages
+    num_scenarios = len(scenarios)
+    metrics.update({
+        'avg_final_net_worth': total_net_worth / num_scenarios if num_scenarios > 0 else 0,
+        'avg_total_savings': total_savings / num_scenarios if num_scenarios > 0 else 0,
+        'avg_total_tax': total_tax / num_scenarios if num_scenarios > 0 else 0,
+        'best_scenario': best_scenario,
+        'best_net_worth': best_net_worth
+    })
+
+    return metrics
 
 
-@st.cache_data(ttl=60, max_entries=10)
 def get_scenario_metadata() -> Dict[str, Any]:
     """
-    Get metadata about available scenarios for UI components using unified models.
-    
-    Returns:
-        Dictionary containing scenario metadata
-    """
-    return {
-        'uk_scenarios': ['UK_Scenario_A', 'UK_Scenario_B'],
-        'international_scenarios': [
-            'Seattle Uk Home', 'Seattle Local Home',
-            'New York Uk Home', 'New York Local Home',
-            'Dubai Uk Home', 'Dubai Local Home'
-        ],
-        'delayed_relocation_scenarios': [
-            'Seattle Year4 Uk Home', 'Seattle Year4 Local Home',
-            'Seattle Year5 Uk Home', 'Seattle Year5 Local Home',
-            'New York Year4 Uk Home', 'New York Year4 Local Home',
-            'New York Year5 Uk Home', 'New York Year5 Local Home',
-            'Dubai Year4 Uk Home', 'Dubai Year4 Local Home',
-            'Dubai Year5 Uk Home', 'Dubai Year5 Local Home'
-        ],
-        'tax_free_scenarios': [
-            'Dubai Uk Home', 'Dubai Local Home',
-            'Dubai Year4 Uk Home', 'Dubai Year4 Local Home',
-            'Dubai Year5 Uk Home', 'Dubai Year5 Local Home'
-        ],
-        'scenario_groups': {
-            'UK': ['UK_Scenario_A', 'UK_Scenario_B'],
-            'Seattle': ['Seattle Uk Home', 'Seattle Local Home', 'Seattle Year4 Uk Home', 'Seattle Year4 Local Home', 'Seattle Year5 Uk Home', 'Seattle Year5 Local Home'],
-            'New York': ['New York Uk Home', 'New York Local Home', 'New York Year4 Uk Home', 'New York Year4 Local Home', 'New York Year5 Uk Home', 'New York Year5 Local Home'],
-            'Dubai': ['Dubai Uk Home', 'Dubai Local Home', 'Dubai Year4 Uk Home', 'Dubai Year4 Local Home', 'Dubai Year5 Uk Home', 'Dubai Year5 Local Home']
-        },
-        'all_scenarios': [
-            'UK_Scenario_A', 'UK_Scenario_B',
-            'Seattle Uk Home', 'Seattle Local Home',
-            'New York Uk Home', 'New York Local Home',
-            'Dubai Uk Home', 'Dubai Local Home',
-            'Seattle Year4 Uk Home', 'Seattle Year4 Local Home',
-            'Seattle Year5 Uk Home', 'Seattle Year5 Local Home',
-            'New York Year4 Uk Home', 'New York Year4 Local Home',
-            'New York Year5 Uk Home', 'New York Year5 Local Home',
-            'Dubai Year4 Uk Home', 'Dubai Year4 Local Home',
-            'Dubai Year5 Uk Home', 'Dubai Year5 Local Home'
-        ]
-    }
+    Get metadata about all available scenarios with proper ID/name mapping.
 
-
-def prepare_comparison_data(scenario1: str, scenario2: str, all_scenarios: Dict[str, UnifiedFinancialScenario]) -> Dict[str, Any]:
-    """
-    Prepare data for scenario comparison with caching using unified models.
-    
-    Args:
-        scenario1: First scenario name
-        scenario2: Second scenario name
-        all_scenarios: All available scenarios with unified structure
-    
     Returns:
-        Dictionary containing comparison data
+        Dictionary containing scenario metadata and mappings
     """
-    if scenario1 not in all_scenarios or scenario2 not in all_scenarios:
-        return {}
-    
-    scenario1_data = all_scenarios[scenario1]
-    scenario2_data = all_scenarios[scenario2]
-    
-    comparison_data = {
-        'scenario1': {
-            'name': scenario1,
-            'final_net_worth': scenario1_data.get_final_net_worth_gbp() if scenario1_data.data_points else 0,
-            'total_savings': sum(point.annual_savings_gbp for point in scenario1_data.data_points),
-            'total_tax': sum(point.total_tax_gbp for point in scenario1_data.data_points)
-        },
-        'scenario2': {
-            'name': scenario2,
-            'final_net_worth': scenario2_data.get_final_net_worth_gbp() if scenario2_data.data_points else 0,
-            'total_savings': sum(point.annual_savings_gbp for point in scenario2_data.data_points),
-            'total_tax': sum(point.total_tax_gbp for point in scenario2_data.data_points)
+    try:
+        planner = TemplateFinancialPlanner()
+        scenario_ids = planner.get_available_scenarios()
+
+        # Get enriched metadata for mapping
+        enriched_metadata = get_enriched_scenario_metadata()
+
+        # Create mappings between IDs and names
+        id_to_name = {}
+        name_to_id = {}
+        all_scenarios = []
+
+        for scenario_id in scenario_ids:
+            # Try to get the display name from enriched metadata
+            scenario_meta = enriched_metadata.get(scenario_id, {})
+            display_name = scenario_meta.get('name', scenario_id)
+
+            # Store mappings
+            id_to_name[scenario_id] = display_name
+            name_to_id[display_name] = scenario_id
+
+            # Use scenario ID as the primary key for selection
+            all_scenarios.append(scenario_id)
+
+        print(f"DEBUG: Created mappings for {len(scenario_ids)} scenarios")
+        print(f"DEBUG: ID to Name mapping: {id_to_name}")
+
+        return {
+            'all_scenarios': all_scenarios,  # Use IDs for consistency
+            'id_to_name': id_to_name,
+            'name_to_id': name_to_id,
+            'scenario_count': len(scenario_ids),
+            'enriched_metadata': enriched_metadata
         }
-    }
-    
-    return comparison_data
+
+    except Exception as e:
+        st.error(f"Failed to get scenario metadata: {str(e)}")
+    return {
+            'all_scenarios': [],
+            'id_to_name': {},
+            'name_to_id': {},
+            'scenario_count': 0,
+            'enriched_metadata': {}
+        }
 
 
-def export_scenario_data(scenarios: Dict[str, UnifiedFinancialScenario], format: str = 'csv') -> bytes:
+def prepare_comparison_data(scenarios: Dict[str, UnifiedFinancialScenario]) -> pd.DataFrame:
     """
-    Export scenario data in specified format with caching using unified models.
-    
+    Prepare data for scenario comparison using unified models.
+
     Args:
-        scenarios: Dictionary of scenario data with unified structure
-        format: Export format ('csv', 'excel')
-    
+        scenarios: Dictionary of scenarios to compare
+
     Returns:
-        Bytes object containing exported data
+        DataFrame with comparison metrics
     """
-    if not scenarios:
-        return b''
-    
-    # Prepare data for export using unified structure
-    export_data = []
-    
+    comparison_data = []
+
     for scenario_name, scenario in scenarios.items():
-        if not scenario.data_points:
-            continue
-        
-        for point in scenario.data_points:
-            export_data.append({
+        if scenario.data_points:
+            # Use unified methods for calculations
+            row = {
                 'Scenario': scenario_name,
-                'Year': point.year,
-                'Net_Worth': point.net_worth_gbp,
-                'Annual_Savings': point.annual_savings_gbp,
-                'Gross_Income': point.gross_income_gbp,
-                'Total_Expenses': point.total_expenses_gbp,
-                'Total_Tax': point.total_tax_gbp,
-                'Jurisdiction': point.jurisdiction.value,
-                'Phase': point.phase.value
-            })
-    
-    if not export_data:
-        return b''
-    
-    df = pd.DataFrame(export_data)
-    
-    if format.lower() == 'csv':
-        return df.to_csv(index=False).encode('utf-8')
-    elif format.lower() == 'excel':
-        import io
-        output = io.BytesIO()
-        with pd.ExcelWriter(output, engine='openpyxl') as writer:
-            df.to_excel(writer, index=False, sheet_name='Scenario_Data')
-        return output.getvalue()
-    else:
-        return df.to_csv(index=False).encode('utf-8')
+                'Final Net Worth (£)': scenario.get_final_net_worth_gbp(),
+                'Average Annual Savings (£)': scenario.get_average_annual_savings_gbp(),
+                'Total Tax Burden (£)': sum(point.tax.total_gbp for point in scenario.data_points),
+                'Growth Rate (%)': scenario.get_net_worth_growth_rate(),
+                'Years': len(scenario.data_points),
+                'Phase': str(scenario.phase).split('.')[-1] if scenario.phase else 'Unknown',
+                'Jurisdiction': str(scenario.jurisdiction).split('.')[-1] if scenario.jurisdiction else 'Unknown'
+            }
+            comparison_data.append(row)
+
+    return pd.DataFrame(comparison_data)
+
+
+def export_scenario_data(scenarios: Dict[str, UnifiedFinancialScenario], filename: str = "scenario_analysis.csv") -> bool:
+    """
+    Export scenario data to CSV using unified models.
+
+    Args:
+        scenarios: Dictionary of scenarios to export
+        filename: Output filename
+
+    Returns:
+        True if export successful, False otherwise
+    """
+    try:
+        export_data = []
+
+        for scenario_name, scenario in scenarios.items():
+            for year, data_point in enumerate(scenario.data_points, 1):
+                row = {
+                    'Scenario': scenario_name,
+                    'Year': year,
+                    'Net Worth (£)': data_point.net_worth.total_gbp,
+                    'Income (£)': data_point.income.total_gbp,
+                    'Tax (£)': data_point.tax.total_gbp,
+                    'Expenses (£)': data_point.expenses.total_gbp,
+                    'Savings (£)': data_point.net_worth.total_gbp - (data_point.net_worth.total_gbp - getattr(data_point, 'annual_savings', CurrencyValue()).total_gbp),
+                    'Phase': str(scenario.phase).split('.')[-1] if scenario.phase else 'Unknown',
+                    'Jurisdiction': str(scenario.jurisdiction).split('.')[-1] if scenario.jurisdiction else 'Unknown'
+                }
+                export_data.append(row)
+
+        df = pd.DataFrame(export_data)
+        df.to_csv(filename, index=False)
+        return True
+
+    except Exception as e:
+        st.error(f"Failed to export data: {str(e)}")
+        return False
 
 
 def get_performance_metrics() -> Dict[str, Any]:
@@ -397,7 +677,27 @@ def get_performance_metrics() -> Dict[str, Any]:
     return get_unified_performance_metrics()
 
 
-def clear_cache() -> None:
-    """Clear all cached data to force reload."""
-    st.cache_data.clear()
-    clear_performance_caches() 
+def clear_cache():
+    """Clear all cached data including performance caches."""
+    try:
+        # Clear Streamlit caches
+        load_all_scenarios.clear()
+        get_enriched_scenario_metadata.clear()
+        validate_all_scenarios.clear()
+        get_template_configuration_summary.clear()
+
+        # Clear performance caches if available
+        clear_performance_caches()
+    except Exception:
+        # Ignore cache clearing errors
+        pass
+
+
+def check_yaml_enhancement() -> bool:
+    """
+    Check if YAML enhancement features are available.
+
+    Returns:
+        True since template-driven system handles YAML internally
+    """
+    return True

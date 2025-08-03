@@ -1,104 +1,75 @@
-# UK Scenario A - Complete Financial Plan
-# Conservative UK tech graduate path
+# UK Conservative Scenario A - Version 3.0
+# Conservative UK tech graduate path using composition-based architecture
 
 scenario:
   id: "uk_scenario_a"
-  name: "UK Scenario A"
-  description: "UK tech graduate path A - conservative progression"
-  version: "2.0.0"
-  created: "2025-01-29"
+  name: "UK Conservative Growth Scenario"
+  description: "Conservative UK career path with steady growth and home purchase"
+  version: "3.0.0"
+  tags: ["uk", "conservative", "tech", "homeowner"]
+  phase: "uk_only"
+  jurisdiction: "UK"
 
-location:
-  name: "United Kingdom"
-  currency: "GBP"
-  exchange_rate: 1.0
-  tax_system: "uk_income_tax_ni"  # References external tax config
-
-income:
-  base_salary: 45000
-  progression:
-    type: "yearly_overrides"
-    rates:
-      1: { salary: 45000, bonus: 0.05, rsu: 0.15 }
-      2: { salary: 52000, bonus: 0.08, rsu: 0.18 }
-      3: { salary: 60000, bonus: 0.10, rsu: 0.20 }
-      4: { salary: 70000, bonus: 0.12, rsu: 0.25 }
-      5: { salary: 80000, bonus: 0.15, rsu: 0.30 }
-      6: { salary: 92000, bonus: 0.15, rsu: 0.30 }
-      7: { salary: 106000, bonus: 0.15, rsu: 0.30 }
-      8: { salary: 122000, bonus: 0.15, rsu: 0.30 }
-      9: { salary: 140000, bonus: 0.15, rsu: 0.30 }
-      10: { salary: 161000, bonus: 0.15, rsu: 0.30 }
+composition:
+  # Location Market
+  location_market: "uk"              # References config/markets/locations/uk.yaml
   
-  rsu_config:
-    vesting_schedule: "4_year_cliff"
-    ipo_multiplier: 2.0
-
-expenses:
-  # Location-specific expenses
-  location_expenses:
-    rent:
-      monthly: 2100
-      currency: "GBP"
-    healthcare:
-      monthly: 0  # NHS is free
-      currency: "GBP"
-    general_expenses:
-      monthly: 1500
-      currency: "GBP"
-    retirement_contribution:
-      percentage: 0.05
-
-  # Universal goal-based expenses
-  goals:
-    university_fees:
+  # Tax System
+  tax_system: "uk_income_tax_ni"     # References config/tax_systems/uk_income_tax_ni.yaml
+  
+  # Salary Progression - Override with exact values from config.py
+  salary_progression:
+    template: "conservative"         # Use conservative template as base
+    override_type: "complete_array"  # Override entire progression with exact values
+    base_salary: 45000
+    
+    # Exact salary progression from config.py UK Scenario A
+    salary_array: [45000, 52000, 60000, 70000, 80000, 92000, 106000, 122000, 140000, 161000]
+    
+    # Exact bonus progression from config.py UK Scenario A
+    bonus_array: [0.05, 0.08, 0.10, 0.12, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15]
+    
+    # Exact RSU progression from config.py UK Scenario A
+    rsu_array: [0.15, 0.18, 0.20, 0.25, 0.30, 0.30, 0.30, 0.30, 0.30, 0.30]
+  
+  # Expense Profile
+  expense_profile: "graduate"        # References config/templates/expense_profiles/graduate.yaml
+  
+  # Life Events
+  life_events:
+    - template: "education"          # References config/templates/life_events/education.yaml
       year: 1
       amount: 16800
       payment_schedule: [5600, 5600, 5600]
-      currency: "GBP"
     
-    marriage:
-      total_cost: 70000
+    - template: "marriage"           # References config/templates/life_events/marriage.yaml
       start_year: 3
       end_year: 4
-      currency: "GBP"
+      total_cost: 70000
     
-    child_costs:
+    - template: "children"           # References config/templates/life_events/children.yaml
       start_year: 7
       one_off_cost: 8500
       ongoing_annual_cost: 10000
-      currency: "GBP"
-    
-    personal_expenses:
-      year_1: 6000
-      year_2: 9000
-      default: 12000
-      currency: "GBP"
-    
-    parental_support:
-      before_house: 12000
-      after_house: 12000
-      house_purchase_year: 5
-      currency: "GBP"
-    
-    travel:
-      annual: 3000
-      currency: "GBP"
-    
-    housing:
-      strategy: "uk_home"
-      purchase_year: 5
-      base_price: 600000
-      price_growth: [0.01, 0.04, 0.06, 0.06]
-      deposit_pct: 0.20
-      mortgage_rate: 0.0525
-      mortgage_term_years: 25
-      currency: "GBP"
+  
+  # Housing Strategy
+  housing_strategy: "uk_home_purchase"  # References config/templates/housing_strategies/uk_home_purchase.yaml
+  
+  # Investment Strategy
+  investment_strategy: "balanced"       # References config/templates/investment_strategies/balanced.yaml
 
-assumptions:
-  start_year: 2025
-  plan_duration_years: 10
-  inflation_rate: 0.025
-  investment_return_rate: 0.065
-  start_age: 24
-  student_loan_debt: 57000 
+# Planning Parameters - From config.py
+planning:
+  start_year: 2025                  # From config.py start_year
+  duration_years: 10                # From config.py plan_duration_years  
+  start_age: 24                     # From config.py start_age
+  currency: "GBP"
+  inflation_rate: 0.025             # From config.py inflation_rate
+  investment_return_rate: 0.065     # From config.py investment_return_rate
+  
+  # Initial state
+  initial_state:
+    student_loan_balance: 57000     # From config.py student_loan_debt
+    initial_investments: 0
+    initial_property_value: 0
+    initial_mortgage: 0 

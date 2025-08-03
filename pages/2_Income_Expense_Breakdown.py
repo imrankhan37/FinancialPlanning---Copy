@@ -1,1333 +1,765 @@
 """
-Income & Expense Breakdown Page
-Hierarchical drill-down analysis of income and expense components using unified models.
+Income and Expense Breakdown Analysis Page
+Detailed breakdown of income sources, expense categories, and tax calculations using unified models.
+Enhanced with template insights, calculation explanations, and parameter sensitivity analysis.
 """
 
 import streamlit as st
-import plotly.graph_objects as go
 import pandas as pd
-import numpy as np
-from typing import Dict, List, Optional, Any
-import uuid
-from plotly.subplots import make_subplots
 import plotly.express as px
-from utils.data import load_all_scenarios, filter_scenarios, calculate_key_metrics
-from utils.charts import create_stacked_income_analysis, create_stacked_expense_analysis
-from components.utils import format_currency, format_percentage, get_scenario_color
-from utils.formatting import extract_numeric_from_currency, extract_numeric_from_percentage
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+from typing import Dict, Any, List, Optional
+import numpy as np
+
+# Import utilities
+from utils.validation import validate_scenario_data, safe_divide, validate_dataframe
+from utils.formatting import format_currency, format_percentage, format_number, extract_numeric_from_currency
 from utils.css_loader import load_component_styles
+from constants import ERROR_MESSAGES, SUCCESS_MESSAGES
 
 # Import unified models
 from models.unified_financial_data import UnifiedFinancialScenario
 
+# Import simplified utilities (expensive metadata functions removed for performance)
+
 
 def render_income_expense_page(scenarios_to_analyze: Optional[Dict[str, UnifiedFinancialScenario]] = None) -> None:
-    """Render the income and expense breakdown page using unified models."""
-    
-    st.markdown("""
-    <div style="background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); padding: 2rem; border-radius: 15px; margin-bottom: 2rem; color: white; text-align: center; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-        <h1 style="margin: 0; font-size: 2.5rem; font-weight: 700;">💰 Income & Expense Analysis</h1>
-        <p style="margin: 0.5rem 0 0 0; font-size: 1.1rem; opacity: 0.9;">Detailed breakdown of income sources, expense categories, and cash flow patterns with drill-down capabilities using unified models.</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Use provided scenarios or fall back to session state
-    if scenarios_to_analyze is None:
-        # Initialize session state if not exists
+    """
+    Render the income and expense breakdown page using unified models with template insights.
+
+    Args:
+        scenarios_to_analyze: Dictionary of scenarios to analyze with unified structure (optional)
+    """
+    try:
+        # Load component styles
+        load_component_styles()
+
+        # Initialize session state if needed
         if 'selected_scenarios' not in st.session_state:
             st.session_state.selected_scenarios = []
         if 'year_range' not in st.session_state:
             st.session_state.year_range = [1, 10]
-        
-        # Check if scenarios are selected
-        if not st.session_state.selected_scenarios:
-            st.warning("⚠️ Please select scenarios in the sidebar to view the income & expense breakdown.")
-            st.info("💡 Use the scenario selection controls in the sidebar to choose which scenarios to analyze.")
-            return
-        
-        # Load scenario data
-        with st.spinner("Loading scenario data..."):
+
+        # Use provided scenarios or get from session state
+        if scenarios_to_analyze is None:
+            from utils.data import load_all_scenarios, filter_scenarios
             all_scenarios = load_all_scenarios()
-            filtered_scenarios = filter_scenarios(
+            scenarios_to_analyze = filter_scenarios(
                 all_scenarios,
                 st.session_state.selected_scenarios,
                 st.session_state.year_range
             )
-        
-        # Show selected scenarios info
-        st.info(f"📊 Analyzing {len(st.session_state.selected_scenarios)} scenario(s): {', '.join(st.session_state.selected_scenarios)}")
-    else:
-        filtered_scenarios = scenarios_to_analyze
-        st.info(f"📊 Analyzing {len(scenarios_to_analyze)} scenario(s): {', '.join(list(scenarios_to_analyze.keys()))}")
-    
-    # Main content with enhanced tabs
-    st.markdown("---")
-    st.subheader("📊 Analysis Sections")
-    
-    tab1, tab2, tab3, tab4 = st.tabs([
-        "📊 Income Analysis",
-        "💸 Expense Analysis",
-        "📈 Cash Flow Analysis",
-        "📋 Detailed Tables"
-    ])
-    
-    with tab1:
-        render_income_breakdown(filtered_scenarios)
-    
-    with tab2:
-        render_expense_breakdown(filtered_scenarios)
-    
-    with tab3:
-        render_cash_flow_analysis(filtered_scenarios)
-    
-    with tab4:
-        render_detailed_tables(filtered_scenarios)
 
-
-def render_income_breakdown(scenarios: Dict[str, UnifiedFinancialScenario]) -> None:
-    """Render income breakdown analysis using unified models."""
-    
-    st.markdown("### 📊 Income Analysis")
-    
-    # Get scenario names
-    scenario_names = list(scenarios.keys())
-    
-    if len(scenario_names) == 1:
-        st.info(f"📊 Analyzing 1 scenario: {scenario_names[0]}")
-        # Show single scenario analysis
-        render_single_scenario_income_analysis(scenarios)
-    elif len(scenario_names) == 2:
-        st.info(f"📊 Analyzing 2 scenario(s): {', '.join(scenario_names)}")
-        # Show comparison analysis
-        render_comparison_income_analysis(scenarios)
-    else:
-        st.info(f"📊 Analyzing {len(scenario_names)} scenario(s): {', '.join(scenario_names)}")
-        # Show multi-scenario analysis
-        render_multi_scenario_income_analysis(scenarios)
-    
-    # Income metrics
-    render_income_metrics(scenarios, "income")
-    
-    # Income table
-    render_income_table(scenarios)
-
-
-def render_income_metrics(scenarios: Dict[str, UnifiedFinancialScenario], component: str) -> None:
-    """Render income metrics using unified models."""
-    try:
-        st.markdown("#### 📊 Income Metrics")
-        
-        # Calculate metrics using unified structure
-        metrics_data = []
-        for scenario_name, scenario in scenarios.items():
-            if scenario.data_points:
-                # Calculate income metrics using unified structure
-                total_income = sum(point.gross_income_gbp for point in scenario.data_points)
-                avg_income = total_income / len(scenario.data_points)
-                max_income = max(point.gross_income_gbp for point in scenario.data_points)
-                min_income = min(point.gross_income_gbp for point in scenario.data_points)
-                
-                # Calculate income components using unified structure
-                total_salary = sum(point.income.salary.gbp_value for point in scenario.data_points)
-                total_bonus = sum(point.income.bonus.gbp_value for point in scenario.data_points)
-                total_rsu = sum(point.income.rsu_vested.gbp_value for point in scenario.data_points)
-                
-                metrics_data.append({
-                    'Scenario': scenario_name,
-                    'Total Income': total_income,
-                    'Avg Annual Income': avg_income,
-                    'Max Income': max_income,
-                    'Min Income': min_income,
-                    'Total Salary': total_salary,
-                    'Total Bonus': total_bonus,
-                    'Total RSU': total_rsu
-                })
-        
-        if metrics_data:
-            df = pd.DataFrame(metrics_data)
-            
-            # Format currency columns
-            currency_columns = ['Total Income', 'Avg Annual Income', 'Max Income', 'Min Income', 
-                              'Total Salary', 'Total Bonus', 'Total RSU']
-            for col in currency_columns:
-                df[col] = df[col].apply(format_currency)
-            
-            st.dataframe(df, use_container_width=True)
-        else:
-            st.warning("No income metrics available for the selected scenarios.")
-    
-    except Exception as e:
-        st.error(f"Error rendering income metrics: {str(e)}")
-
-
-def render_income_table(scenarios: Dict[str, UnifiedFinancialScenario]) -> None:
-    """Render income table using unified models."""
-    try:
-        st.markdown("#### 📋 Income Breakdown Table")
-        
-        # Prepare data for table using unified structure
-        table_data = []
-        for scenario_name, scenario in scenarios.items():
-            if scenario.data_points:
-                for point in scenario.data_points:
-                    table_data.append({
-                        'Scenario': scenario_name,
-                        'Year': point.year,
-                        'Age': point.age,
-                        'Salary': point.income.salary.gbp_value,
-                        'Bonus': point.income.bonus.gbp_value,
-                        'RSU Vested': point.income.rsu_vested.gbp_value,
-                        'Other Income': point.income.other_income.gbp_value,
-                        'Total Income': point.gross_income_gbp,
-                        'Jurisdiction': point.jurisdiction.value,
-                        'Phase': point.phase.value
-                    })
-        
-        if table_data:
-            df = pd.DataFrame(table_data)
-            
-            # Format currency columns
-            currency_columns = ['Salary', 'Bonus', 'RSU Vested', 'Other Income', 'Total Income']
-            for col in currency_columns:
-                df[col] = df[col].apply(format_currency)
-            
-            st.dataframe(df, use_container_width=True)
-        else:
-            st.warning("No income data available for the selected scenarios.")
-    
-    except Exception as e:
-        st.error(f"Error rendering income table: {str(e)}")
-
-
-def render_expense_breakdown(scenarios: Dict[str, UnifiedFinancialScenario]) -> None:
-    """Render expense breakdown analysis using unified models."""
-    
-    st.markdown("### 💸 Expense Analysis")
-    
-    # Get scenario names
-    scenario_names = list(scenarios.keys())
-    
-    if len(scenario_names) == 1:
-        st.info(f"📊 Analyzing 1 scenario: {scenario_names[0]}")
-        # Show single scenario analysis
-        render_single_scenario_expense_analysis(scenarios)
-    elif len(scenario_names) == 2:
-        st.info(f"📊 Analyzing 2 scenario(s): {', '.join(scenario_names)}")
-        # Show comparison analysis
-        render_comparison_expense_analysis(scenarios)
-    else:
-        st.info(f"📊 Analyzing {len(scenario_names)} scenario(s): {', '.join(scenario_names)}")
-        # Show multi-scenario analysis
-        render_multi_scenario_expense_analysis(scenarios)
-    
-    # Expense metrics
-    render_expense_metrics(scenarios, "expense")
-    
-    # Expense table
-    render_expense_table(scenarios)
-
-
-def render_expense_metrics(scenarios: Dict[str, UnifiedFinancialScenario], component: str) -> None:
-    """Render expense metrics using unified models."""
-    try:
-        st.markdown("#### 📊 Expense Metrics")
-        
-        # Calculate metrics using unified structure
-        metrics_data = []
-        for scenario_name, scenario in scenarios.items():
-            if scenario.data_points:
-                # Calculate expense metrics using unified structure
-                total_expenses = sum(point.total_expenses_gbp for point in scenario.data_points)
-                avg_expenses = total_expenses / len(scenario.data_points)
-                max_expenses = max(point.total_expenses_gbp for point in scenario.data_points)
-                min_expenses = min(point.total_expenses_gbp for point in scenario.data_points)
-                
-                # Calculate expense components using unified structure
-                total_housing = sum(point.expenses.housing.gbp_value for point in scenario.data_points)
-                total_living = sum(point.expenses.living.gbp_value for point in scenario.data_points)
-                total_taxes = sum(point.expenses.taxes.gbp_value for point in scenario.data_points)
-                total_investments = sum(point.expenses.investments.gbp_value for point in scenario.data_points)
-                total_other = sum(point.expenses.other.gbp_value for point in scenario.data_points)
-                
-                metrics_data.append({
-                    'Scenario': scenario_name,
-                    'Total Expenses': total_expenses,
-                    'Avg Annual Expenses': avg_expenses,
-                    'Max Expenses': max_expenses,
-                    'Min Expenses': min_expenses,
-                    'Total Housing': total_housing,
-                    'Total Living': total_living,
-                    'Total Taxes': total_taxes,
-                    'Total Investments': total_investments,
-                    'Total Other': total_other
-                })
-        
-        if metrics_data:
-            df = pd.DataFrame(metrics_data)
-            
-            # Format currency columns
-            currency_columns = ['Total Expenses', 'Avg Annual Expenses', 'Max Expenses', 'Min Expenses',
-                              'Total Housing', 'Total Living', 'Total Taxes', 'Total Investments', 'Total Other']
-            for col in currency_columns:
-                df[col] = df[col].apply(format_currency)
-            
-            st.dataframe(df, use_container_width=True)
-        else:
-            st.warning("No expense metrics available for the selected scenarios.")
-    
-    except Exception as e:
-        st.error(f"Error rendering expense metrics: {str(e)}")
-
-
-def render_expense_table(scenarios: Dict[str, UnifiedFinancialScenario]) -> None:
-    """Render expense table using unified models."""
-    try:
-        st.markdown("#### 📋 Expense Breakdown Table")
-        
-        # Prepare data for table using unified structure
-        table_data = []
-        for scenario_name, scenario in scenarios.items():
-            if scenario.data_points:
-                for point in scenario.data_points:
-                    table_data.append({
-                        'Scenario': scenario_name,
-                        'Year': point.year,
-                        'Age': point.age,
-                        'Housing': point.expenses.housing.gbp_value,
-                        'Living': point.expenses.living.gbp_value,
-                        'Taxes': point.expenses.taxes.gbp_value,
-                        'Investments': point.expenses.investments.gbp_value,
-                        'Other': point.expenses.other.gbp_value,
-                        'Total Expenses': point.total_expenses_gbp,
-                        'Jurisdiction': point.jurisdiction.value,
-                        'Phase': point.phase.value
-                    })
-        
-        if table_data:
-            df = pd.DataFrame(table_data)
-            
-            # Format currency columns
-            currency_columns = ['Housing', 'Living', 'Taxes', 'Investments', 'Other', 'Total Expenses']
-            for col in currency_columns:
-                df[col] = df[col].apply(format_currency)
-            
-            st.dataframe(df, use_container_width=True)
-        else:
-            st.warning("No expense data available for the selected scenarios.")
-    
-    except Exception as e:
-        st.error(f"Error rendering expense table: {str(e)}")
-
-
-def render_cash_flow_analysis(scenarios: Dict[str, UnifiedFinancialScenario]) -> None:
-    """Render cash flow analysis using unified models."""
-    try:
-        st.markdown("### 📈 Cash Flow Analysis")
-        st.markdown("Analysis of income vs expenses and resulting cash flow patterns.")
-        
-        # Create cash flow chart
-        fig = create_cash_flow_chart(scenarios)
-        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': True})
-        
-        # Cash flow insights
-        st.markdown("#### 💡 Cash Flow Insights")
-        
-        # Calculate cash flow metrics using unified structure
-        cash_flow_data = []
-        for scenario_name, scenario in scenarios.items():
-            if scenario.data_points:
-                for point in scenario.data_points:
-                    cash_flow = point.annual_savings_gbp  # Income - Expenses
-                    cash_flow_data.append({
-                        'Scenario': scenario_name,
-                        'Year': point.year,
-                        'Income': point.gross_income_gbp,
-                        'Expenses': point.total_expenses_gbp,
-                        'Cash Flow': cash_flow,
-                        'Cash Flow %': (cash_flow / point.gross_income_gbp * 100) if point.gross_income_gbp > 0 else 0
-                    })
-        
-        if cash_flow_data:
-            df = pd.DataFrame(cash_flow_data)
-            
-            # Format currency columns
-            currency_columns = ['Income', 'Expenses', 'Cash Flow']
-            for col in currency_columns:
-                df[col] = df[col].apply(format_currency)
-            
-            # Format percentage column
-            df['Cash Flow %'] = df['Cash Flow %'].apply(lambda x: f"{x:.1f}%")
-            
-            st.dataframe(df, use_container_width=True)
-        else:
-            st.warning("No cash flow data available for the selected scenarios.")
-    
-    except Exception as e:
-        st.error(f"Error rendering cash flow analysis: {str(e)}")
-
-
-def render_detailed_tables(scenarios: Dict[str, UnifiedFinancialScenario]) -> None:
-    """Render detailed tables using unified models."""
-    try:
-        st.markdown("### 📋 Detailed Data Tables")
-        
-        # Create comparison tables
-        income_comparison = create_income_comparison_table(scenarios)
-        expense_comparison = create_expense_comparison_table(scenarios)
-        
-        # Display tables
-        st.markdown("#### 💰 Income Comparison")
-        st.dataframe(income_comparison, use_container_width=True)
-        
-        st.markdown("#### 💸 Expense Comparison")
-        st.dataframe(expense_comparison, use_container_width=True)
-        
-    except Exception as e:
-        st.error(f"Error rendering detailed tables: {str(e)}")
-
-
-def create_cash_flow_chart(scenarios: Dict[str, UnifiedFinancialScenario]) -> go.Figure:
-    """Create cash flow chart using unified models."""
-    try:
-        # Prepare data using unified structure
-        plot_data = []
-        for scenario_name, scenario in scenarios.items():
-            if scenario.data_points:
-                for i, point in enumerate(scenario.data_points, 1):
-                    plot_data.append({
-                        'Year': i,
-                        'Income': point.gross_income_gbp,
-                        'Expenses': point.total_expenses_gbp,
-                        'Cash Flow': point.annual_savings_gbp,
-                        'Scenario': scenario_name
-                    })
-        
-        if not plot_data:
-            return go.Figure()
-        
-        df = pd.DataFrame(plot_data)
-        
-        # Create subplot
-        fig = make_subplots(
-            rows=2, cols=1,
-            subplot_titles=('Income vs Expenses', 'Cash Flow'),
-            vertical_spacing=0.1
-        )
-        
-        # Add traces for each scenario
-        for scenario_name in df['Scenario'].unique():
-            scenario_data = df[df['Scenario'] == scenario_name]
-            
-            # Income vs Expenses
-            fig.add_trace(
-                go.Scatter(
-                    x=scenario_data['Year'],
-                    y=scenario_data['Income'],
-                    mode='lines+markers',
-                    name=f'{scenario_name} - Income',
-                    line=dict(color=get_scenario_color(scenario_name)),
-                    showlegend=True
-                ),
-                row=1, col=1
-            )
-            
-            fig.add_trace(
-                go.Scatter(
-                    x=scenario_data['Year'],
-                    y=scenario_data['Expenses'],
-                    mode='lines+markers',
-                    name=f'{scenario_name} - Expenses',
-                    line=dict(color=get_scenario_color(scenario_name), dash='dash'),
-                    showlegend=True
-                ),
-                row=1, col=1
-            )
-            
-            # Cash Flow
-            fig.add_trace(
-                go.Scatter(
-                    x=scenario_data['Year'],
-                    y=scenario_data['Cash Flow'],
-                    mode='lines+markers',
-                    name=f'{scenario_name} - Cash Flow',
-                    line=dict(color=get_scenario_color(scenario_name)),
-                    showlegend=False
-                ),
-                row=2, col=1
-            )
-        
-        # Update layout
-        fig.update_layout(
-            title='Cash Flow Analysis',
-            height=600,
-            showlegend=True,
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
-        )
-        
-        # Update axes
-        fig.update_xaxes(title_text="Year", row=1, col=1)
-        fig.update_yaxes(title_text="Amount (£)", row=1, col=1)
-        fig.update_xaxes(title_text="Year", row=2, col=1)
-        fig.update_yaxes(title_text="Cash Flow (£)", row=2, col=1)
-        
-        return fig
-    
-    except Exception as e:
-        st.error(f"Error creating cash flow chart: {str(e)}")
-        return go.Figure()
-
-
-def create_income_comparison_table(scenarios: Dict[str, UnifiedFinancialScenario]) -> pd.DataFrame:
-    """Create income comparison table using unified models."""
-    try:
-        # Prepare data using unified structure
-        table_data = []
-        for scenario_name, scenario in scenarios.items():
-            if scenario.data_points:
-                for point in scenario.data_points:
-                    table_data.append({
-                        'Scenario': scenario_name,
-                        'Year': point.year,
-                        'Salary': point.income.salary.gbp_value,
-                        'Bonus': point.income.bonus.gbp_value,
-                        'RSU': point.income.rsu_vested.gbp_value,
-                        'Other': point.income.other_income.gbp_value,
-                        'Total': point.gross_income_gbp,
-                        'Jurisdiction': point.jurisdiction.value
-                    })
-        
-        if table_data:
-            df = pd.DataFrame(table_data)
-            
-            # Format currency columns
-            currency_columns = ['Salary', 'Bonus', 'RSU', 'Other', 'Total']
-            for col in currency_columns:
-                df[col] = df[col].apply(format_currency)
-            
-            return df
-        else:
-            return pd.DataFrame()
-    
-    except Exception as e:
-        st.error(f"Error creating income comparison table: {str(e)}")
-        return pd.DataFrame()
-
-
-def create_expense_comparison_table(scenarios: Dict[str, UnifiedFinancialScenario]) -> pd.DataFrame:
-    """Create expense comparison table using unified models."""
-    try:
-        # Prepare data using unified structure
-        table_data = []
-        for scenario_name, scenario in scenarios.items():
-            if scenario.data_points:
-                for point in scenario.data_points:
-                    table_data.append({
-                        'Scenario': scenario_name,
-                        'Year': point.year,
-                        'Housing': point.expenses.housing.gbp_value,
-                        'Living': point.expenses.living.gbp_value,
-                        'Taxes': point.expenses.taxes.gbp_value,
-                        'Investments': point.expenses.investments.gbp_value,
-                        'Other': point.expenses.other.gbp_value,
-                        'Total': point.total_expenses_gbp,
-                        'Jurisdiction': point.jurisdiction.value
-                    })
-        
-        if table_data:
-            df = pd.DataFrame(table_data)
-            
-            # Format currency columns
-            currency_columns = ['Housing', 'Living', 'Taxes', 'Investments', 'Other', 'Total']
-            for col in currency_columns:
-                df[col] = df[col].apply(format_currency)
-            
-            return df
-        else:
-            return pd.DataFrame()
-    
-    except Exception as e:
-        st.error(f"Error creating expense comparison table: {str(e)}")
-        return pd.DataFrame()
-
-
-def render_single_scenario_income_analysis(scenarios: Dict[str, UnifiedFinancialScenario]) -> None:
-    """Render single scenario income analysis using unified models."""
-    try:
-        st.markdown("#### 📊 Single Scenario Income Analysis")
-        
-        # Get the single scenario
-        scenario_name = list(scenarios.keys())[0]
-        scenario = scenarios[scenario_name]
-        
-        if not scenario.data_points:
-            st.warning("No data points available for analysis.")
+        # Validate scenario data
+        if not validate_scenario_data(scenarios_to_analyze):
+            st.error("Invalid scenario data provided.")
             return
-        
-        # Create income chart
-        fig = create_single_scenario_income_chart(scenarios)
-        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': True})
-        
-        # Calculate and display metrics
-        metrics = calculate_single_scenario_income_metrics(scenarios)
-        
-        st.markdown("#### 📈 Income Metrics")
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            st.metric(
-                label="Total Income",
-                value=format_currency(metrics['total_income']),
-                delta=None
-            )
-        
-        with col2:
-            st.metric(
-                label="Avg Annual Income",
-                value=format_currency(metrics['avg_income']),
-                delta=None
-            )
-        
-        with col3:
-            st.metric(
-                label="Income Growth Rate",
-                value=f"{metrics['growth_rate']:.1f}%",
-                delta=None
-            )
-    
+
+        # Use simplified metadata to avoid expensive operations
+        enriched_metadata = {}  # Simplified for performance
+        validation_status = {}
+        config_summary = {}
+
+        st.markdown("## 💰 Income & Expense Breakdown Analysis")
+        st.markdown("Detailed analysis of income sources, expense categories, and tax calculations with template-driven insights.")
+
+        # Template System Overview
+        render_template_system_overview(scenarios_to_analyze, enriched_metadata, validation_status)
+
+        # Render different analysis sections with template insights
+        render_income_breakdown_analysis(scenarios_to_analyze, enriched_metadata, config_summary)
+        render_expense_breakdown_analysis(scenarios_to_analyze, enriched_metadata, config_summary)
+        render_tax_analysis(scenarios_to_analyze, enriched_metadata, config_summary)
+        render_template_parameter_sensitivity(scenarios_to_analyze, enriched_metadata, config_summary)
+
     except Exception as e:
-        st.error(f"Error rendering single scenario income analysis: {str(e)}")
+        st.error(f"Error rendering income expense page: {str(e)}")
+        st.info("Please refresh the page and try again.")
 
 
-def render_comparison_income_analysis(scenarios: Dict[str, UnifiedFinancialScenario]) -> None:
-    """Render comparison income analysis using unified models."""
+def render_template_system_overview(scenarios: Dict[str, UnifiedFinancialScenario],
+                                   enriched_metadata: Dict, validation_status: Dict) -> None:
+    """Render template system overview with validation insights."""
     try:
-        st.markdown("#### 📊 Comparison Income Analysis")
-        
-        # Create comparison chart
-        fig = create_income_comparison_chart(scenarios)
-        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': True})
-        
-        # Calculate comparison metrics
-        summary = calculate_multi_scenario_income_summary(scenarios)
-        
-        st.markdown("#### 📈 Comparison Metrics")
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            st.metric(
-                label="Best Total Income",
-                value=format_currency(summary['best_total_income']),
-                delta=None
-            )
-        
-        with col2:
-            st.metric(
-                label="Best Avg Income",
-                value=format_currency(summary['best_avg_income']),
-                delta=None
-            )
-        
-        with col3:
-            st.metric(
-                label="Best Growth Rate",
-                value=f"{summary['best_growth_rate']:.1f}%",
-                delta=None
-            )
-    
-    except Exception as e:
-        st.error(f"Error rendering comparison income analysis: {str(e)}")
+        st.markdown("### 🔧 Template System Overview")
 
-
-def render_multi_scenario_income_analysis(scenarios: Dict[str, UnifiedFinancialScenario]) -> None:
-    """Render multi-scenario income analysis using unified models."""
-    try:
-        st.markdown("#### 📊 Multi-Scenario Income Analysis")
-        
-        # Create multi-scenario chart
-        fig = create_multi_scenario_income_chart(scenarios)
-        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': True})
-        
-        # Calculate summary metrics
-        summary = calculate_multi_scenario_income_summary(scenarios)
-        
-        st.markdown("#### 📈 Summary Metrics")
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            st.metric(
-                label="Total Scenarios",
-                value=str(summary['total_scenarios']),
-                delta=None
-            )
-        
-        with col2:
-            st.metric(
-                label="Best Total Income",
-                value=format_currency(summary['best_total_income']),
-                delta=None
-            )
-        
-        with col3:
-            st.metric(
-                label="Best Growth Rate",
-                value=f"{summary['best_growth_rate']:.1f}%",
-                delta=None
-            )
-    
-    except Exception as e:
-        st.error(f"Error rendering multi-scenario income analysis: {str(e)}")
-
-
-def render_single_scenario_expense_analysis(scenarios: Dict[str, UnifiedFinancialScenario]) -> None:
-    """Render single scenario expense analysis using unified models."""
-    try:
-        st.markdown("#### 📊 Single Scenario Expense Analysis")
-        
-        # Get the single scenario
-        scenario_name = list(scenarios.keys())[0]
-        scenario = scenarios[scenario_name]
-        
-        if not scenario.data_points:
-            st.warning("No data points available for analysis.")
+        if not scenarios:
+            st.warning("No scenarios available for template analysis.")
             return
-        
-        # Create expense chart
-        fig = create_single_scenario_expense_chart(scenarios)
-        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': True})
-        
-        # Calculate and display metrics
-        metrics = calculate_single_scenario_expense_metrics(scenarios)
-        
-        st.markdown("#### 📈 Expense Metrics")
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            st.metric(
-                label="Total Expenses",
-                value=format_currency(metrics['total_expenses']),
-                delta=None
-            )
-        
-        with col2:
-            st.metric(
-                label="Avg Annual Expenses",
-                value=format_currency(metrics['avg_expenses']),
-                delta=None
-            )
-        
-        with col3:
-            st.metric(
-                label="Expense Growth Rate",
-                value=f"{metrics['growth_rate']:.1f}%",
-                delta=None
-            )
-    
+
+        # Template composition analysis
+        template_compositions = {}
+        validation_issues = []
+
+        for scenario_name in scenarios.keys():
+            for scenario_id, meta in enriched_metadata.items():
+                if meta.get('name', scenario_id) == scenario_name:
+                    if 'error' not in meta:
+                        composition = meta.get('template_composition', {})
+                        for template_type, template_name in composition.items():
+                            if template_type not in template_compositions:
+                                template_compositions[template_type] = {}
+                            template_compositions[template_type][template_name] = template_compositions[template_type].get(template_name, 0) + 1
+
+                    # Check validation status
+                    if not validation_status.get(scenario_id, {}).get('valid', False):
+                        validation_issues.append({
+                            'scenario': scenario_name,
+                            'issue': validation_status.get(scenario_id, {}).get('message', 'Unknown validation issue')
+                        })
+                    break
+
+        # Display template composition
+        if template_compositions:
+            col1, col2 = st.columns(2)
+
+            with col1:
+                st.markdown("#### 📋 Template Distribution")
+                for template_type, templates in template_compositions.items():
+                    st.markdown(f"**{template_type.replace('_', ' ').title()}:**")
+                    for template_name, count in templates.items():
+                        st.markdown(f"• {template_name}: {count} scenario(s)")
+
+            with col2:
+                st.markdown("#### ✅ Validation Status")
+                total_scenarios = len(scenarios)
+                valid_scenarios = total_scenarios - len(validation_issues)
+
+                st.metric("Total Scenarios", total_scenarios)
+                st.metric("Valid Scenarios", valid_scenarios)
+
+                if validation_issues:
+                    with st.expander("⚠️ Validation Issues", expanded=False):
+                        for issue in validation_issues:
+                            st.markdown(f"• **{issue['scenario']}**: {issue['issue']}")
+
+        # Template calculation explanations
+        with st.expander("🧮 Template Calculation Methods", expanded=False):
+            st.markdown("### How Templates Drive Calculations")
+            st.markdown("**Salary Templates**: Define progression patterns, bonuses, RSU schedules")
+            st.markdown("**Housing Templates**: Calculate mortgage payments, property appreciation, costs")
+            st.markdown("**Investment Templates**: Determine allocation strategies and growth rates")
+            st.markdown("**Tax Templates**: Apply jurisdiction-specific tax rules and calculations")
+            st.markdown("**Life Event Templates**: Model major life changes and their financial impact")
+
     except Exception as e:
-        st.error(f"Error rendering single scenario expense analysis: {str(e)}")
+        st.error(f"Error rendering template system overview: {str(e)}")
 
 
-def render_comparison_expense_analysis(scenarios: Dict[str, UnifiedFinancialScenario]) -> None:
-    """Render comparison expense analysis using unified models."""
+def render_income_breakdown_analysis(scenarios: Dict[str, UnifiedFinancialScenario],
+                                   enriched_metadata: Dict, config_summary: Dict) -> None:
+    """Render detailed income breakdown analysis with template insights."""
     try:
-        st.markdown("#### 📊 Comparison Expense Analysis")
-        
-        # Create comparison chart
-        fig = create_expense_comparison_chart(scenarios)
-        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': True})
-        
-        # Calculate comparison metrics
-        summary = calculate_multi_scenario_expense_summary(scenarios)
-        
-        st.markdown("#### 📈 Comparison Metrics")
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            st.metric(
-                label="Lowest Total Expenses",
-                value=format_currency(summary['lowest_total_expenses']),
-                delta=None
-            )
-        
-        with col2:
-            st.metric(
-                label="Lowest Avg Expenses",
-                value=format_currency(summary['lowest_avg_expenses']),
-                delta=None
-            )
-        
-        with col3:
-            st.metric(
-                label="Best Expense Control",
-                value=f"{summary['best_expense_control']:.1f}%",
-                delta=None
-            )
-    
-    except Exception as e:
-        st.error(f"Error rendering comparison expense analysis: {str(e)}")
+        st.markdown("### 💼 Income Breakdown Analysis")
+        st.markdown("Detailed analysis of income sources and their template-driven calculations.")
 
+        # Prepare income data with template context
+        income_data = []
+        template_insights = {}
 
-def render_multi_scenario_expense_analysis(scenarios: Dict[str, UnifiedFinancialScenario]) -> None:
-    """Render multi-scenario expense analysis using unified models."""
-    try:
-        st.markdown("#### 📊 Multi-Scenario Expense Analysis")
-        
-        # Create multi-scenario chart
-        fig = create_multi_scenario_expense_chart(scenarios)
-        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': True})
-        
-        # Calculate summary metrics
-        summary = calculate_multi_scenario_expense_summary(scenarios)
-        
-        st.markdown("#### 📈 Summary Metrics")
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            st.metric(
-                label="Total Scenarios",
-                value=str(summary['total_scenarios']),
-                delta=None
-            )
-        
-        with col2:
-            st.metric(
-                label="Lowest Total Expenses",
-                value=format_currency(summary['lowest_total_expenses']),
-                delta=None
-            )
-        
-        with col3:
-            st.metric(
-                label="Best Expense Control",
-                value=f"{summary['best_expense_control']:.1f}%",
-                delta=None
-            )
-    
-    except Exception as e:
-        st.error(f"Error rendering multi-scenario expense analysis: {str(e)}")
-
-
-def create_single_scenario_income_chart(scenarios: Dict[str, UnifiedFinancialScenario]) -> go.Figure:
-    """Create single scenario income chart using unified models."""
-    try:
-        # Get the single scenario
-        scenario_name = list(scenarios.keys())[0]
-        scenario = scenarios[scenario_name]
-        
-        if not scenario.data_points:
-            return go.Figure()
-        
-        # Prepare data using unified structure
-        years = [point.year for point in scenario.data_points]
-        salary = [point.income.salary.gbp_value for point in scenario.data_points]
-        bonus = [point.income.bonus.gbp_value for point in scenario.data_points]
-        rsu = [point.income.rsu_vested.gbp_value for point in scenario.data_points]
-        other = [point.income.other_income.gbp_value for point in scenario.data_points]
-        
-        # Create stacked bar chart
-        fig = go.Figure()
-        
-        fig.add_trace(go.Bar(
-            x=years,
-            y=salary,
-            name='Salary',
-            marker_color='#1f77b4'
-        ))
-        
-        fig.add_trace(go.Bar(
-            x=years,
-            y=bonus,
-            name='Bonus',
-            marker_color='#ff7f0e'
-        ))
-        
-        fig.add_trace(go.Bar(
-            x=years,
-            y=rsu,
-            name='RSU',
-            marker_color='#2ca02c'
-        ))
-        
-        fig.add_trace(go.Bar(
-            x=years,
-            y=other,
-            name='Other',
-            marker_color='#d62728'
-        ))
-        
-        fig.update_layout(
-            title=f'Income Breakdown - {scenario_name}',
-            barmode='stack',
-            height=500,
-            showlegend=True
-        )
-        
-        return fig
-    
-    except Exception as e:
-        st.error(f"Error creating single scenario income chart: {str(e)}")
-        return go.Figure()
-
-
-def create_multi_scenario_income_chart(scenarios: Dict[str, UnifiedFinancialScenario]) -> go.Figure:
-    """Create multi-scenario income chart using unified models."""
-    try:
-        # Prepare data using unified structure
-        plot_data = []
         for scenario_name, scenario in scenarios.items():
             if scenario.data_points:
+                # Get template metadata
+                template_meta = _get_scenario_template_info(scenario_name, enriched_metadata)
+                config_info = config_summary.get(scenario_name, {})
+
+                # Store template insights
+                template_insights[scenario_name] = {
+                    'salary_template': template_meta.get('salary', 'Unknown'),
+                    'progression_type': config_info.get('key_parameters', {}).get('salary_progression', 'Unknown'),
+                    'bonus_structure': config_info.get('key_parameters', {}).get('bonus_structure', 'Unknown'),
+                    'rsu_schedule': config_info.get('key_parameters', {}).get('rsu_schedule', 'Unknown')
+                }
+
                 for i, point in enumerate(scenario.data_points, 1):
-                    plot_data.append({
+                    income_breakdown = point.income
+
+                    income_data.append({
                         'Year': i,
-                        'Total Income': point.gross_income_gbp,
-                        'Scenario': scenario_name
+                        'Scenario': scenario_name,
+                        'Base Salary': income_breakdown.base_salary.gbp_value,
+                        'Bonus': income_breakdown.bonus.gbp_value,
+                        'RSU Vested': income_breakdown.rsu_vested.gbp_value,
+                        'Other Income': income_breakdown.other_income.gbp_value,
+                        'Total Income': income_breakdown.total_gbp,
+                        'Salary Template': template_meta.get('salary', 'Unknown'),
+                        'Phase': template_meta.get('phase', 'Unknown')
                     })
-        
-        if not plot_data:
-            return go.Figure()
-        
-        df = pd.DataFrame(plot_data)
-        
-        # Create line chart
-        fig = px.line(
-            df,
-            x='Year',
-            y='Total Income',
-            color='Scenario',
-            title='Income Comparison Across Scenarios',
-            labels={'Total Income': 'Total Income (£)', 'Year': 'Year'}
-        )
-        
+
+        if income_data:
+            df = pd.DataFrame(income_data)
+
+            # Income composition charts
+            col1, col2 = st.columns(2)
+
+            with col1:
+                # Stacked area chart for income components
+                fig = go.Figure()
+
+                scenarios = df['Scenario'].unique()
+                for scenario in scenarios:
+                    scenario_data = df[df['Scenario'] == scenario]
+
+                    fig.add_trace(go.Scatter(
+                    x=scenario_data['Year'],
+                        y=scenario_data['Base Salary'],
+                        stackgroup='one',
+                        name=f'{scenario} - Base Salary',
+                        hovertemplate=f"<b>{scenario}</b><br>Year: %{{x}}<br>Base Salary: £%{{y:,.0f}}<extra></extra>"
+                    ))
+
+                    fig.add_trace(go.Scatter(
+                    x=scenario_data['Year'],
+                        y=scenario_data['Bonus'],
+                        stackgroup='one',
+                        name=f'{scenario} - Bonus',
+                        hovertemplate=f"<b>{scenario}</b><br>Year: %{{x}}<br>Bonus: £%{{y:,.0f}}<extra></extra>"
+                    ))
+
+                    fig.add_trace(go.Scatter(
+                    x=scenario_data['Year'],
+                        y=scenario_data['RSU Vested'],
+                        stackgroup='one',
+                        name=f'{scenario} - RSU',
+                        hovertemplate=f"<b>{scenario}</b><br>Year: %{{x}}<br>RSU: £%{{y:,.0f}}<extra></extra>"
+                    ))
+
         fig.update_layout(
-            height=500,
-            showlegend=True,
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
-        )
-        
-        return fig
-    
-    except Exception as e:
-        st.error(f"Error creating multi-scenario income chart: {str(e)}")
-        return go.Figure()
+                    title="Income Components Over Time",
+                    xaxis_title="Year",
+                    yaxis_title="Income (£)",
+                    height=400
+                )
 
+            st.plotly_chart(fig, use_container_width=True)
 
-def create_single_scenario_expense_chart(scenarios: Dict[str, UnifiedFinancialScenario]) -> go.Figure:
-    """Create single scenario expense chart using unified models."""
-    try:
-        # Get the single scenario
-        scenario_name = list(scenarios.keys())[0]
-        scenario = scenarios[scenario_name]
-        
-        if not scenario.data_points:
-            return go.Figure()
-        
-        # Prepare data using unified structure
-        years = [point.year for point in scenario.data_points]
-        housing = [point.expenses.housing.gbp_value for point in scenario.data_points]
-        living = [point.expenses.living.gbp_value for point in scenario.data_points]
-        taxes = [point.expenses.taxes.gbp_value for point in scenario.data_points]
-        investments = [point.expenses.investments.gbp_value for point in scenario.data_points]
-        other = [point.expenses.other.gbp_value for point in scenario.data_points]
-        
-        # Create stacked bar chart
-        fig = go.Figure()
-        
-        fig.add_trace(go.Bar(
-            x=years,
-            y=housing,
-            name='Housing',
-            marker_color='#1f77b4'
-        ))
-        
-        fig.add_trace(go.Bar(
-            x=years,
-            y=living,
-            name='Living',
-            marker_color='#ff7f0e'
-        ))
-        
-        fig.add_trace(go.Bar(
-            x=years,
-            y=taxes,
-            name='Taxes',
-            marker_color='#2ca02c'
-        ))
-        
-        fig.add_trace(go.Bar(
-            x=years,
-            y=investments,
-            name='Investments',
-            marker_color='#d62728'
-        ))
-        
-        fig.add_trace(go.Bar(
-            x=years,
-            y=other,
-            name='Other',
-            marker_color='#9467bd'
-        ))
-        
-        fig.update_layout(
-            title=f'Expense Breakdown - {scenario_name}',
-            barmode='stack',
-            height=500,
-            showlegend=True
-        )
-        
-        return fig
-    
-    except Exception as e:
-        st.error(f"Error creating single scenario expense chart: {str(e)}")
-        return go.Figure()
+            with col2:
+                # Income growth rate analysis
+                growth_data = []
+                for scenario in df['Scenario'].unique():
+                    scenario_data = df[df['Scenario'] == scenario].sort_values('Year')
+                    if len(scenario_data) > 1:
+                        for i in range(1, len(scenario_data)):
+                            prev_income = scenario_data.iloc[i-1]['Total Income']
+                            curr_income = scenario_data.iloc[i]['Total Income']
+                            growth_rate = ((curr_income - prev_income) / prev_income) * 100 if prev_income > 0 else 0
 
+                            growth_data.append({
+                                'Year': scenario_data.iloc[i]['Year'],
+                                'Scenario': scenario,
+                                'Growth Rate': growth_rate,
+                                'Salary Template': scenario_data.iloc[i]['Salary Template']
+                            })
 
-def create_multi_scenario_expense_chart(scenarios: Dict[str, UnifiedFinancialScenario]) -> go.Figure:
-    """Create multi-scenario expense chart using unified models."""
-    try:
-        # Prepare data using unified structure
-        plot_data = []
-        for scenario_name, scenario in scenarios.items():
-            if scenario.data_points:
-                for i, point in enumerate(scenario.data_points, 1):
-                    plot_data.append({
-                        'Year': i,
-                        'Total Expenses': point.total_expenses_gbp,
-                        'Scenario': scenario_name
-                    })
-        
-        if not plot_data:
-            return go.Figure()
-        
-        df = pd.DataFrame(plot_data)
-        
-        # Create line chart
-        fig = px.line(
-            df,
-            x='Year',
-            y='Total Expenses',
-            color='Scenario',
-            title='Expense Comparison Across Scenarios',
-            labels={'Total Expenses': 'Total Expenses (£)', 'Year': 'Year'}
-        )
-        
-        fig.update_layout(
-            height=500,
-            showlegend=True,
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
-        )
-        
-        return fig
-    
-    except Exception as e:
-        st.error(f"Error creating multi-scenario expense chart: {str(e)}")
-        return go.Figure()
+                if growth_data:
+                    growth_df = pd.DataFrame(growth_data)
+                    fig = px.line(
+                        growth_df,
+                        x='Year',
+                        y='Growth Rate',
+                        color='Scenario',
+                        title='Income Growth Rate by Template',
+                        labels={'Growth Rate': 'Growth Rate (%)'},
+                        hover_data=['Salary Template']
+                    )
+                    fig.update_layout(height=400)
+                    st.plotly_chart(fig, use_container_width=True)
 
+            # Template-driven income insights
+            with st.expander("🔍 Template-Driven Income Insights", expanded=False):
+                for scenario_name, insights in template_insights.items():
+                    st.markdown(f"**{scenario_name}**")
+                    st.markdown(f"• Salary Template: {insights['salary_template']}")
+                    st.markdown(f"• Progression Type: {insights['progression_type']}")
+                    st.markdown(f"• Bonus Structure: {insights['bonus_structure']}")
+                    st.markdown(f"• RSU Schedule: {insights['rsu_schedule']}")
 
-def calculate_single_scenario_income_metrics(scenarios: Dict[str, UnifiedFinancialScenario]) -> Dict[str, float]:
-    """Calculate single scenario income metrics using unified models."""
-    try:
-        # Get the single scenario
-        scenario_name = list(scenarios.keys())[0]
-        scenario = scenarios[scenario_name]
-        
-        if not scenario.data_points:
-            return {
-                'total_income': 0.0,
-                'avg_income': 0.0,
-                'growth_rate': 0.0
-            }
-        
-        # Calculate metrics using unified structure
-        total_income = sum(point.gross_income_gbp for point in scenario.data_points)
-        avg_income = total_income / len(scenario.data_points)
-        
-        # Calculate growth rate
-        if len(scenario.data_points) >= 2:
-            initial_income = scenario.data_points[0].gross_income_gbp
-            final_income = scenario.data_points[-1].gross_income_gbp
-            
-            if initial_income > 0:
-                growth_rate = ((final_income - initial_income) / initial_income) * 100
-            else:
-                growth_rate = 0.0
+                    # Calculate scenario-specific metrics
+                    scenario_data = df[df['Scenario'] == scenario_name]
+                    if not scenario_data.empty:
+                        avg_growth = scenario_data['Total Income'].pct_change().mean() * 100
+                        total_rsu = scenario_data['RSU Vested'].sum()
+                        total_bonus = scenario_data['Bonus'].sum()
+
+                        st.markdown(f"• Average Annual Growth: {avg_growth:.1f}%")
+                        st.markdown(f"• Total RSU Value: £{total_rsu:,.0f}")
+                        st.markdown(f"• Total Bonus Value: £{total_bonus:,.0f}")
+                    st.markdown("---")
         else:
-            growth_rate = 0.0
-        
-        return {
-            'total_income': total_income,
-            'avg_income': avg_income,
-            'growth_rate': growth_rate
-        }
-    
+            st.warning("No income data available for analysis.")
+
     except Exception as e:
-        st.error(f"Error calculating single scenario income metrics: {str(e)}")
-        return {
-            'total_income': 0.0,
-            'avg_income': 0.0,
-            'growth_rate': 0.0
-        }
+        st.error(f"Error rendering income breakdown analysis: {str(e)}")
 
 
-def calculate_single_scenario_expense_metrics(scenarios: Dict[str, UnifiedFinancialScenario]) -> Dict[str, float]:
-    """Calculate single scenario expense metrics using unified models."""
+def render_expense_breakdown_analysis(scenarios: Dict[str, UnifiedFinancialScenario],
+                                    enriched_metadata: Dict, config_summary: Dict) -> None:
+    """Render detailed expense breakdown analysis with template insights."""
     try:
-        # Get the single scenario
-        scenario_name = list(scenarios.keys())[0]
-        scenario = scenarios[scenario_name]
-        
-        if not scenario.data_points:
-            return {
-                'total_expenses': 0.0,
-                'avg_expenses': 0.0,
-                'growth_rate': 0.0
-            }
-        
-        # Calculate metrics using unified structure
-        total_expenses = sum(point.total_expenses_gbp for point in scenario.data_points)
-        avg_expenses = total_expenses / len(scenario.data_points)
-        
-        # Calculate growth rate
-        if len(scenario.data_points) >= 2:
-            initial_expenses = scenario.data_points[0].total_expenses_gbp
-            final_expenses = scenario.data_points[-1].total_expenses_gbp
-            
-            if initial_expenses > 0:
-                growth_rate = ((final_expenses - initial_expenses) / initial_expenses) * 100
-            else:
-                growth_rate = 0.0
+        st.markdown("### 🏠 Expense Breakdown Analysis")
+        st.markdown("Detailed analysis of expense categories and their template-driven calculations.")
+
+        # Prepare expense data with template context
+        expense_data = []
+        housing_insights = {}
+
+        for scenario_name, scenario in scenarios.items():
+            if scenario.data_points:
+                template_meta = _get_scenario_template_info(scenario_name, enriched_metadata)
+                config_info = config_summary.get(scenario_name, {})
+
+                # Store housing template insights
+                housing_insights[scenario_name] = {
+                    'housing_template': template_meta.get('housing', 'Unknown'),
+                    'housing_strategy': config_info.get('key_parameters', {}).get('housing_strategy', 'Unknown'),
+                    'location': config_info.get('key_parameters', {}).get('location', 'Unknown')
+                }
+
+                for i, point in enumerate(scenario.data_points, 1):
+                    expenses = point.expenses
+
+                    expense_data.append({
+                        'Year': i,
+                        'Scenario': scenario_name,
+                        'Housing': expenses.housing.gbp_value,
+                        'Living': expenses.living.gbp_value,
+                        'Transportation': expenses.transportation.gbp_value,
+                        'Healthcare': expenses.healthcare.gbp_value,
+                        'Other': expenses.other.gbp_value,
+                        'Total Expenses': expenses.total_gbp,
+                        'Housing Template': template_meta.get('housing', 'Unknown'),
+                        'Phase': template_meta.get('phase', 'Unknown')
+                    })
+
+        if expense_data:
+            df = pd.DataFrame(expense_data)
+
+            # Expense composition analysis
+            col1, col2 = st.columns(2)
+
+        with col1:
+                # Expense composition pie chart for latest year
+                latest_year = df['Year'].max()
+                latest_data = df[df['Year'] == latest_year]
+
+                expense_categories = ['Housing', 'Living', 'Transportation', 'Healthcare', 'Other']
+                avg_expenses = {cat: latest_data[cat].mean() for cat in expense_categories}
+
+                fig = px.pie(
+                    values=list(avg_expenses.values()),
+                    names=list(avg_expenses.keys()),
+                    title=f"Average Expense Composition (Year {latest_year})"
+                )
+                fig.update_traces(
+                    hovertemplate="<b>%{label}</b><br>Amount: £%{value:,.0f}<br>Percentage: %{percent}<extra></extra>"
+                )
+                st.plotly_chart(fig, use_container_width=True)
+
+        with col2:
+                # Housing costs by template
+                housing_by_template = df.groupby(['Housing Template', 'Year'])['Housing'].mean().reset_index()
+
+                fig = px.line(
+                    housing_by_template,
+                    x='Year',
+                    y='Housing',
+                    color='Housing Template',
+                    title='Housing Costs by Template',
+                    labels={'Housing': 'Housing Costs (£)'}
+                )
+                fig.update_traces(
+                    hovertemplate="<b>%{fullData.name}</b><br>Year: %{x}<br>Housing: £%{y:,.0f}<extra></extra>"
+                )
+                st.plotly_chart(fig, use_container_width=True)
+
+            # Expense efficiency analysis
+            st.markdown("#### 📈 Expense Efficiency Analysis")
+
+            # Calculate expense ratios
+            expense_ratios = []
+            for scenario_name, scenario in scenarios.items():
+                if scenario.data_points:
+                    for i, point in enumerate(scenario.data_points, 1):
+                        total_income = point.income.total_gbp
+                        total_expenses = point.expenses.total_gbp
+                        housing_ratio = (point.expenses.housing.gbp_value / total_income) * 100 if total_income > 0 else 0
+
+                        expense_ratios.append({
+                            'Year': i,
+                            'Scenario': scenario_name,
+                            'Housing Ratio': housing_ratio,
+                            'Total Expense Ratio': (total_expenses / total_income) * 100 if total_income > 0 else 0,
+                            'Housing Template': housing_insights[scenario_name]['housing_template']
+                        })
+
+            if expense_ratios:
+                ratio_df = pd.DataFrame(expense_ratios)
+
+                fig = px.scatter(
+                    ratio_df,
+                    x='Housing Ratio',
+                    y='Total Expense Ratio',
+                    color='Scenario',
+                    size='Year',
+                    title='Expense Efficiency: Housing vs Total Expense Ratios',
+                    labels={
+                        'Housing Ratio': 'Housing Ratio (% of Income)',
+                        'Total Expense Ratio': 'Total Expense Ratio (% of Income)'
+                    },
+                    hover_data=['Year', 'Housing Template']
+                )
+
+                # Add reference lines
+                fig.add_hline(y=50, line_dash="dash", line_color="red",
+                             annotation_text="50% Expense Threshold")
+                fig.add_vline(x=30, line_dash="dash", line_color="orange",
+                             annotation_text="30% Housing Threshold")
+
+                st.plotly_chart(fig, use_container_width=True)
+
+            # Housing template insights
+            with st.expander("🏠 Housing Template Insights", expanded=False):
+                for scenario_name, insights in housing_insights.items():
+                    st.markdown(f"**{scenario_name}**")
+                    st.markdown(f"• Housing Template: {insights['housing_template']}")
+                    st.markdown(f"• Housing Strategy: {insights['housing_strategy']}")
+                    st.markdown(f"• Location: {insights['location']}")
+
+                    # Calculate housing-specific metrics
+                    scenario_data = df[df['Scenario'] == scenario_name]
+                    if not scenario_data.empty:
+                        avg_housing = scenario_data['Housing'].mean()
+                        housing_growth = scenario_data['Housing'].pct_change().mean() * 100
+
+                        st.markdown(f"• Average Annual Housing Cost: £{avg_housing:,.0f}")
+                        st.markdown(f"• Average Housing Cost Growth: {housing_growth:.1f}%")
+                    st.markdown("---")
         else:
-            growth_rate = 0.0
-        
-        return {
-            'total_expenses': total_expenses,
-            'avg_expenses': avg_expenses,
-            'growth_rate': growth_rate
-        }
-    
+            st.warning("No expense data available for analysis.")
+
     except Exception as e:
-        st.error(f"Error calculating single scenario expense metrics: {str(e)}")
-        return {
-            'total_expenses': 0.0,
-            'avg_expenses': 0.0,
-            'growth_rate': 0.0
-        }
+        st.error(f"Error rendering expense breakdown analysis: {str(e)}")
 
 
-def calculate_multi_scenario_income_summary(scenarios: Dict[str, UnifiedFinancialScenario]) -> Dict[str, float]:
-    """Calculate multi-scenario income summary using unified models."""
+def render_tax_analysis(scenarios: Dict[str, UnifiedFinancialScenario],
+                       enriched_metadata: Dict, config_summary: Dict) -> None:
+    """Render detailed tax analysis with template insights."""
     try:
-        if not scenarios:
-            return {
-                'total_scenarios': 0,
-                'best_total_income': 0.0,
-                'best_avg_income': 0.0,
-                'best_growth_rate': 0.0
-            }
-        
-        # Calculate metrics for each scenario
-        scenario_metrics = []
+        st.markdown("### 🧾 Tax Analysis")
+        st.markdown("Comprehensive tax analysis across different jurisdictions and template configurations.")
+
+        # Prepare tax data with template context
+        tax_data = []
+        tax_insights = {}
+
         for scenario_name, scenario in scenarios.items():
             if scenario.data_points:
-                total_income = sum(point.gross_income_gbp for point in scenario.data_points)
-                avg_income = total_income / len(scenario.data_points)
-                
-                # Calculate growth rate
-                if len(scenario.data_points) >= 2:
-                    initial_income = scenario.data_points[0].gross_income_gbp
-                    final_income = scenario.data_points[-1].gross_income_gbp
-                    
-                    if initial_income > 0:
-                        growth_rate = ((final_income - initial_income) / initial_income) * 100
-                    else:
-                        growth_rate = 0.0
-                else:
-                    growth_rate = 0.0
-                
-                scenario_metrics.append({
-                    'name': scenario_name,
-                    'total_income': total_income,
-                    'avg_income': avg_income,
-                    'growth_rate': growth_rate
-                })
-        
-        if not scenario_metrics:
-            return {
-                'total_scenarios': 0,
-                'best_total_income': 0.0,
-                'best_avg_income': 0.0,
-                'best_growth_rate': 0.0
-            }
-        
-        # Find best performers
-        best_total_income = max(scenario_metrics, key=lambda x: x['total_income'])
-        best_avg_income = max(scenario_metrics, key=lambda x: x['avg_income'])
-        best_growth_rate = max(scenario_metrics, key=lambda x: x['growth_rate'])
-        
-        return {
-            'total_scenarios': len(scenarios),
-            'best_total_income': best_total_income['total_income'],
-            'best_avg_income': best_avg_income['avg_income'],
-            'best_growth_rate': best_growth_rate['growth_rate']
-        }
-    
-    except Exception as e:
-        st.error(f"Error calculating multi-scenario income summary: {str(e)}")
-        return {
-            'total_scenarios': 0,
-            'best_total_income': 0.0,
-            'best_avg_income': 0.0,
-            'best_growth_rate': 0.0
-        }
+                template_meta = _get_scenario_template_info(scenario_name, enriched_metadata)
+                config_info = config_summary.get(scenario_name, {})
 
+                # Store tax system insights
+                tax_insights[scenario_name] = {
+                    'tax_system': config_info.get('tax_system', 'Unknown'),
+                    'jurisdiction': template_meta.get('jurisdiction', 'Unknown'),
+                    'location': config_info.get('key_parameters', {}).get('location', 'Unknown')
+                }
 
-def calculate_multi_scenario_expense_summary(scenarios: Dict[str, UnifiedFinancialScenario]) -> Dict[str, float]:
-    """Calculate multi-scenario expense summary using unified models."""
-    try:
-        if not scenarios:
-            return {
-                'total_scenarios': 0,
-                'lowest_total_expenses': 0.0,
-                'lowest_avg_expenses': 0.0,
-                'best_expense_control': 0.0
-            }
-        
-        # Calculate metrics for each scenario
-        scenario_metrics = []
-        for scenario_name, scenario in scenarios.items():
-            if scenario.data_points:
-                total_expenses = sum(point.total_expenses_gbp for point in scenario.data_points)
-                avg_expenses = total_expenses / len(scenario.data_points)
-                
-                # Calculate expense control (lower is better)
-                if len(scenario.data_points) >= 2:
-                    initial_expenses = scenario.data_points[0].total_expenses_gbp
-                    final_expenses = scenario.data_points[-1].total_expenses_gbp
-                    
-                    if initial_expenses > 0:
-                        expense_control = ((initial_expenses - final_expenses) / initial_expenses) * 100
-                    else:
-                        expense_control = 0.0
-                else:
-                    expense_control = 0.0
-                
-                scenario_metrics.append({
-                    'name': scenario_name,
-                    'total_expenses': total_expenses,
-                    'avg_expenses': avg_expenses,
-                    'expense_control': expense_control
-                })
-        
-        if not scenario_metrics:
-            return {
-                'total_scenarios': 0,
-                'lowest_total_expenses': 0.0,
-                'lowest_avg_expenses': 0.0,
-                'best_expense_control': 0.0
-            }
-        
-        # Find best performers (lowest expenses, best control)
-        lowest_total_expenses = min(scenario_metrics, key=lambda x: x['total_expenses'])
-        lowest_avg_expenses = min(scenario_metrics, key=lambda x: x['avg_expenses'])
-        best_expense_control = max(scenario_metrics, key=lambda x: x['expense_control'])
-        
-        return {
-            'total_scenarios': len(scenarios),
-            'lowest_total_expenses': lowest_total_expenses['total_expenses'],
-            'lowest_avg_expenses': lowest_avg_expenses['avg_expenses'],
-            'best_expense_control': best_expense_control['expense_control']
-        }
-    
-    except Exception as e:
-        st.error(f"Error calculating multi-scenario expense summary: {str(e)}")
-        return {
-            'total_scenarios': 0,
-            'lowest_total_expenses': 0.0,
-            'lowest_avg_expenses': 0.0,
-            'best_expense_control': 0.0
-        }
-
-
-def create_income_comparison_chart(scenarios: Dict[str, UnifiedFinancialScenario]) -> go.Figure:
-    """Create income comparison chart using unified models."""
-    try:
-        # Prepare data using unified structure
-        plot_data = []
-        for scenario_name, scenario in scenarios.items():
-            if scenario.data_points:
                 for i, point in enumerate(scenario.data_points, 1):
-                    plot_data.append({
+                    tax_breakdown = point.tax
+                    total_income = point.income.total_gbp
+
+                    effective_rate = (tax_breakdown.total_gbp / total_income) * 100 if total_income > 0 else 0
+
+                    tax_data.append({
                         'Year': i,
-                        'Total Income': point.gross_income_gbp,
-                        'Scenario': scenario_name
+                        'Scenario': scenario_name,
+                        'Income Tax': tax_breakdown.income_tax.gbp_value,
+                        'Social Security': tax_breakdown.social_security.gbp_value,
+                        'Other Tax': tax_breakdown.other_tax.gbp_value,
+                        'Total Tax': tax_breakdown.total_gbp,
+                        'Total Income': total_income,
+                        'Effective Tax Rate': effective_rate,
+                        'Tax System': tax_insights[scenario_name]['tax_system'],
+                        'Jurisdiction': tax_insights[scenario_name]['jurisdiction']
                     })
-        
-        if not plot_data:
-            return go.Figure()
-        
-        df = pd.DataFrame(plot_data)
-        
-        # Create line chart
+
+        if tax_data:
+            df = pd.DataFrame(tax_data)
+
+            # Tax analysis charts
+            col1, col2 = st.columns(2)
+
+            with col1:
+                # Effective tax rates by jurisdiction
+                fig = px.box(
+                    df,
+                    x='Jurisdiction',
+                    y='Effective Tax Rate',
+                    color='Tax System',
+                    title='Effective Tax Rates by Jurisdiction',
+                    labels={'Effective Tax Rate': 'Effective Tax Rate (%)'}
+                )
+                fig.update_traces(
+                    hovertemplate="<b>%{fullData.name}</b><br>Jurisdiction: %{x}<br>Tax Rate: %{y:.1f}%<extra></extra>"
+                )
+                st.plotly_chart(fig, use_container_width=True)
+
+            with col2:
+                # Tax burden over time
         fig = px.line(
             df,
             x='Year',
-            y='Total Income',
+                    y='Total Tax',
             color='Scenario',
-            title='Income Comparison',
-            labels={'Total Income': 'Total Income (£)', 'Year': 'Year'}
-        )
-        
-        fig.update_layout(
-            height=500,
-            showlegend=True,
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
-        )
-        
-        return fig
-    
+                    title='Tax Burden Over Time',
+                    labels={'Total Tax': 'Total Tax (£)'},
+                    hover_data=['Tax System', 'Effective Tax Rate']
+                )
+                st.plotly_chart(fig, use_container_width=True)
+
+            # Tax efficiency comparison
+            st.markdown("#### ⚖️ Tax Efficiency Comparison")
+
+            # Calculate tax efficiency metrics
+            tax_efficiency = df.groupby(['Tax System', 'Jurisdiction']).agg({
+                'Effective Tax Rate': ['mean', 'std'],
+                'Total Tax': 'sum',
+                'Total Income': 'sum'
+            }).round(2)
+
+            tax_efficiency.columns = ['Avg Tax Rate (%)', 'Tax Rate Std (%)', 'Total Tax (£)', 'Total Income (£)']
+            tax_efficiency['Tax Efficiency Score'] = (
+                100 - tax_efficiency['Avg Tax Rate (%)'] +
+                (10 / (tax_efficiency['Tax Rate Std (%)'] + 1))
+            ).round(1)
+
+            st.dataframe(tax_efficiency, use_container_width=True)
+
+            # Tax system insights
+            with st.expander("🌍 Tax System Insights", expanded=False):
+                for scenario_name, insights in tax_insights.items():
+                    st.markdown(f"**{scenario_name}**")
+                    st.markdown(f"• Tax System: {insights['tax_system']}")
+                    st.markdown(f"• Jurisdiction: {insights['jurisdiction']}")
+                    st.markdown(f"• Location: {insights['location']}")
+
+                    # Calculate tax-specific metrics
+                    scenario_data = df[df['Scenario'] == scenario_name]
+                    if not scenario_data.empty:
+                        avg_rate = scenario_data['Effective Tax Rate'].mean()
+                        total_tax = scenario_data['Total Tax'].sum()
+
+                        st.markdown(f"• Average Effective Rate: {avg_rate:.1f}%")
+                        st.markdown(f"• Total Tax Burden: £{total_tax:,.0f}")
+                    st.markdown("---")
+            else:
+            st.warning("No tax data available for analysis.")
+
     except Exception as e:
-        st.error(f"Error creating income comparison chart: {str(e)}")
-        return go.Figure()
+        st.error(f"Error rendering tax analysis: {str(e)}")
 
 
-def create_expense_comparison_chart(scenarios: Dict[str, UnifiedFinancialScenario]) -> go.Figure:
-    """Create expense comparison chart using unified models."""
+def render_template_parameter_sensitivity(scenarios: Dict[str, UnifiedFinancialScenario],
+                                        enriched_metadata: Dict, config_summary: Dict) -> None:
+    """Render template parameter sensitivity analysis."""
     try:
-        # Prepare data using unified structure
-        plot_data = []
+        st.markdown("### 🎚️ Template Parameter Sensitivity Analysis")
+        st.markdown("Analyze how different template parameters affect financial outcomes.")
+
+        if not scenarios:
+            st.warning("No scenarios available for sensitivity analysis.")
+            return
+
+        # Extract parameter variations
+        parameter_variations = {}
+        outcome_metrics = {}
+
         for scenario_name, scenario in scenarios.items():
+            config_info = config_summary.get(scenario_name, {})
+            key_params = config_info.get('key_parameters', {})
+
+            # Store parameters for comparison
+            parameter_variations[scenario_name] = key_params
+
+            # Calculate outcome metrics
             if scenario.data_points:
-                for i, point in enumerate(scenario.data_points, 1):
-                    plot_data.append({
-                        'Year': i,
-                        'Total Expenses': point.total_expenses_gbp,
-                        'Scenario': scenario_name
+                final_net_worth = scenario.get_final_net_worth_gbp()
+                avg_savings = scenario.get_average_annual_savings_gbp()
+                total_tax = sum(point.tax.total_gbp for point in scenario.data_points)
+
+                outcome_metrics[scenario_name] = {
+                    'Final Net Worth': final_net_worth,
+                    'Average Savings': avg_savings,
+                    'Total Tax': total_tax
+                }
+
+        if parameter_variations and outcome_metrics:
+            # Create parameter comparison
+            col1, col2 = st.columns(2)
+
+            with col1:
+                st.markdown("#### 📊 Parameter Impact Analysis")
+
+                # Find common parameters across scenarios
+                all_params = set()
+                for params in parameter_variations.values():
+                    all_params.update(params.keys())
+
+                # Show parameter distribution
+                for param in sorted(all_params):
+                    param_values = {}
+                    for scenario, params in parameter_variations.items():
+                        if param in params:
+                            value = params[param]
+                            if isinstance(value, (int, float)):
+                                param_values[scenario] = value
+
+                    if len(param_values) > 1 and len(set(param_values.values())) > 1:
+                        st.markdown(f"**{param.replace('_', ' ').title()}:**")
+                        for scenario, value in param_values.items():
+                            net_worth = outcome_metrics[scenario]['Final Net Worth']
+                            st.markdown(f"• {scenario}: {value} → £{net_worth:,.0f} net worth")
+
+            with col2:
+                st.markdown("#### 🎯 Outcome Sensitivity")
+
+                # Create sensitivity matrix
+                sensitivity_data = []
+                for scenario, metrics in outcome_metrics.items():
+                    params = parameter_variations[scenario]
+
+                    sensitivity_data.append({
+                        'Scenario': scenario,
+                        'Net Worth': metrics['Final Net Worth'],
+                        'Avg Savings': metrics['Average Savings'],
+                        'Tax Burden': metrics['Total Tax'],
+                        'Location': params.get('location', 'Unknown'),
+                        'Salary Template': params.get('salary_progression', 'Unknown')
                     })
-        
-        if not plot_data:
-            return go.Figure()
-        
-        df = pd.DataFrame(plot_data)
-        
-        # Create line chart
-        fig = px.line(
-            df,
-            x='Year',
-            y='Total Expenses',
-            color='Scenario',
-            title='Expense Comparison',
-            labels={'Total Expenses': 'Total Expenses (£)', 'Year': 'Year'}
-        )
-        
-        fig.update_layout(
-            height=500,
-            showlegend=True,
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
-        )
-        
-        return fig
-    
+
+                if sensitivity_data:
+                    sens_df = pd.DataFrame(sensitivity_data)
+
+                    # Correlation analysis
+                    st.markdown("**Key Insights:**")
+
+                    # Find scenarios with highest/lowest outcomes
+                    best_nw = sens_df.loc[sens_df['Net Worth'].idxmax()]
+                    worst_nw = sens_df.loc[sens_df['Net Worth'].idxmin()]
+
+                    st.markdown(f"• **Best Net Worth**: {best_nw['Scenario']} (£{best_nw['Net Worth']:,.0f})")
+                    st.markdown(f"• **Location**: {best_nw['Location']}")
+                    st.markdown(f"• **Salary Template**: {best_nw['Salary Template']}")
+                    st.markdown("")
+                    st.markdown(f"• **Lowest Net Worth**: {worst_nw['Scenario']} (£{worst_nw['Net Worth']:,.0f})")
+                    st.markdown(f"• **Location**: {worst_nw['Location']}")
+                    st.markdown(f"• **Salary Template**: {worst_nw['Salary Template']}")
+
+            # Parameter optimization recommendations
+            with st.expander("🚀 Parameter Optimization Recommendations", expanded=False):
+                st.markdown("### Template Configuration Recommendations")
+
+                # Analyze best performing parameters
+                best_scenario = max(outcome_metrics.keys(), key=lambda x: outcome_metrics[x]['Final Net Worth'])
+                best_params = parameter_variations[best_scenario]
+
+                st.markdown(f"**Best Performing Configuration** ({best_scenario}):")
+                for param, value in best_params.items():
+                    st.markdown(f"• {param.replace('_', ' ').title()}: {value}")
+
+                st.markdown("### Parameter Sensitivity Rankings")
+
+                # Simple sensitivity analysis
+                param_impacts = {}
+                for param in all_params:
+                    values_outcomes = []
+                    for scenario, params in parameter_variations.items():
+                        if param in params and isinstance(params[param], (int, float)):
+                            values_outcomes.append((params[param], outcome_metrics[scenario]['Final Net Worth']))
+
+                    if len(values_outcomes) > 1:
+                        # Calculate correlation
+                        values, outcomes = zip(*values_outcomes)
+                        if len(set(values)) > 1:
+                            correlation = np.corrcoef(values, outcomes)[0, 1]
+                            param_impacts[param] = abs(correlation)
+
+                # Sort by impact
+                sorted_impacts = sorted(param_impacts.items(), key=lambda x: x[1], reverse=True)
+
+                st.markdown("**Parameters by Impact** (correlation with net worth):")
+                for param, impact in sorted_impacts[:5]:
+                    st.markdown(f"• {param.replace('_', ' ').title()}: {impact:.3f}")
+        else:
+            st.info("Insufficient parameter variation for sensitivity analysis.")
+
     except Exception as e:
-        st.error(f"Error creating expense comparison chart: {str(e)}")
-        return go.Figure()
+        st.error(f"Error rendering template parameter sensitivity: {str(e)}")
+
+
+def _get_scenario_template_info(scenario_name: str, enriched_metadata: Dict) -> Dict[str, str]:
+    """Get simplified template information for a scenario."""
+    # Handle empty metadata with simplified logic
+    if not enriched_metadata:
+        # Extract basic info from scenario name patterns
+        phase_type = "Multi-Phase" if "year" in scenario_name.lower() else "Single-Phase"
+
+        # Determine location/jurisdiction from name
+        if "dubai" in scenario_name.lower():
+            jurisdiction = "UAE"
+            salary_template = "Tech (Tax-Free)"
+        elif "seattle" in scenario_name.lower():
+            jurisdiction = "US (Seattle)"
+            salary_template = "Tech (US West Coast)"
+        elif "new_york" in scenario_name.lower():
+            jurisdiction = "US (New York)"
+            salary_template = "Tech (US East Coast)"
+        elif "uk" in scenario_name.lower():
+            jurisdiction = "UK"
+            salary_template = "Tech (UK)"
+        else:
+            jurisdiction = "Unknown"
+            salary_template = "Unknown"
+
+        # Determine housing strategy
+        if "local_home" in scenario_name.lower():
+            housing_template = "Local Purchase"
+        elif "uk_home" in scenario_name.lower():
+            housing_template = "UK Purchase"
+        else:
+            housing_template = "Unknown"
+
+        # Determine investment strategy
+        if "aggressive" in scenario_name.lower():
+            investment_template = "Aggressive Growth"
+        elif "conservative" in scenario_name.lower():
+            investment_template = "Conservative"
+        else:
+            investment_template = "Balanced"
+
+        return {
+            'salary': salary_template,
+            'housing': housing_template,
+            'investments': investment_template,
+            'phase': phase_type,
+            'jurisdiction': jurisdiction
+        }
+
+    # Original logic for full metadata (kept for backward compatibility)
+    for scenario_id, meta in enriched_metadata.items():
+        if meta.get('name', scenario_id) == scenario_name:
+            if 'error' not in meta:
+                composition = meta.get('template_composition', {})
+                return {
+                    'salary': composition.get('salary', 'Unknown'),
+                    'housing': composition.get('housing', 'Unknown'),
+                    'investments': composition.get('investments', 'Unknown'),
+                    'phase': meta.get('phase_type', 'Unknown'),
+                    'jurisdiction': meta.get('configuration_summary', {}).get('jurisdiction', 'Unknown')
+                }
+            break
+    return {'salary': 'Unknown', 'housing': 'Unknown', 'investments': 'Unknown', 'phase': 'Unknown', 'jurisdiction': 'Unknown'}
 
 
 def main() -> None:
@@ -1336,4 +768,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main() 
+    main()

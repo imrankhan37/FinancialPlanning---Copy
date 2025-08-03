@@ -35,13 +35,16 @@ def calculate_parental_home_price(config):
     return parental_home_price
 
 def calculate_uk_salary_progression(plan_year, scenario_type):
-    """Calculate UK salary based on scenario type and year."""
+    """Calculate UK salary based on scenario type and year - restored to original YAML values."""
     if scenario_type == 'A':
-        if plan_year <= 1: return 55000
-        elif plan_year <= 2: return 67500
-        elif plan_year <= 5: return 80000
-        else: return 115000
+        # Original salary array from uk_scenario_a.yaml
+        salary_array = [45000, 52000, 60000, 70000, 80000, 92000, 106000, 122000, 140000, 161000]
+        if 1 <= plan_year <= len(salary_array):
+            return salary_array[plan_year - 1]
+        else:
+            return salary_array[-1]  # Use last value for years beyond array
     elif scenario_type == 'B':
+        # Scenario B uses different logic - calculated dynamically
         if plan_year <= 1: return 55000
         elif plan_year <= 2: return 67500
         else:
@@ -50,33 +53,34 @@ def calculate_uk_salary_progression(plan_year, scenario_type):
     return 0
 
 def calculate_uk_bonus(salary, scenario_type, plan_year):
-    """Calculate UK bonus based on scenario type."""
+    """Calculate UK bonus based on scenario type - restored to original YAML values."""
     if scenario_type == 'A':
-        return salary * 0.125
+        # Original bonus rate array from uk_scenario_a.yaml
+        bonus_rate_array = [0.05, 0.08, 0.10, 0.12, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15]
+        if 1 <= plan_year <= len(bonus_rate_array):
+            return salary * bonus_rate_array[plan_year - 1]
+        else:
+            return salary * bonus_rate_array[-1]  # Use last rate for years beyond array
     elif scenario_type == 'B':
         if plan_year <= 2: return salary * 0.125
         else: return salary * 0.10
     return 0
 
 def calculate_rsu_vesting_scenario_a(plan_year, salary, rsu_grants, ipo_multiplier):
-    """Calculate RSU vesting for Scenario A."""
-    # Add new RSU grant if starting from Year 3
-    if plan_year >= 3:
-        rsu_grants.append({
-            "grant_year": plan_year, 
-            "annual_vest_value": salary * 0.20 / 4, 
-            "vesting_end_year": plan_year + 3
-        })
+    """Calculate RSU vesting for Scenario A - restored to original YAML values."""
+    # Original RSU rate array from uk_scenario_a.yaml
+    rsu_rate_array = [0.15, 0.18, 0.20, 0.25, 0.30, 0.30, 0.30, 0.30, 0.30, 0.30]
     
-    # Calculate vested value
-    current_vesting_tranches = [g for g in rsu_grants if plan_year >= g["grant_year"]]
-    rsu_vested_value = sum(g["annual_vest_value"] for g in current_vesting_tranches) * ipo_multiplier
+    # Calculate RSU value as percentage of salary
+    if 1 <= plan_year <= len(rsu_rate_array):
+        rsu_rate = rsu_rate_array[plan_year - 1]
+    else:
+        rsu_rate = rsu_rate_array[-1]  # Use last rate for years beyond array
     
-    # Calculate unvested equity value
-    unvested_equity_value = 0
-    for g in rsu_grants:
-        remaining_vests = max(0, g["vesting_end_year"] - plan_year + 1)
-        unvested_equity_value += g["annual_vest_value"] * remaining_vests * ipo_multiplier
+    rsu_vested_value = salary * rsu_rate * ipo_multiplier
+    
+    # For simplicity, assume 50% of annual RSU value remains unvested
+    unvested_equity_value = rsu_vested_value * 0.5
     
     return rsu_vested_value, unvested_equity_value
 

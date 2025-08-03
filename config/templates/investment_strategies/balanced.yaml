@@ -1,0 +1,140 @@
+template_type: "investment_strategy"
+version: "1.0.0"
+metadata:
+  name: "Balanced Investment Strategy"
+  description: "Moderate risk strategy balancing growth and security"
+  suitable_for: ["uk", "us", "uae"]
+  risk_level: "moderate"
+  author: "Financial Planning System"
+
+# Investment allocation strategy
+allocation:
+  type: "lifecycle_based"  # Allocation changes with age/career stage
+  
+  # Asset allocation by career stage
+  by_career_stage:
+    early_career: # Years 1-5
+      equity_percentage: 0.70      # 70% stocks/equity
+      bonds_percentage: 0.20       # 20% bonds
+      cash_percentage: 0.05        # 5% cash/emergency
+      alternatives_percentage: 0.05 # 5% REITs/commodities
+      retirement_percentage: 0.30  # 30% of savings to retirement accounts
+    
+    mid_career: # Years 6-15
+      equity_percentage: 0.65      # 65% stocks/equity
+      bonds_percentage: 0.25       # 25% bonds
+      cash_percentage: 0.05        # 5% cash
+      alternatives_percentage: 0.05 # 5% alternatives
+      retirement_percentage: 0.40  # 40% of savings to retirement accounts
+    
+    late_career: # Years 16+
+      equity_percentage: 0.55      # 55% stocks/equity
+      bonds_percentage: 0.35       # 35% bonds
+      retirement_percentage: 0.50  # 50% of savings to retirement accounts
+      cash_percentage: 0.05        # 5% cash
+      alternatives_percentage: 0.05 # 5% alternatives
+
+# Account prioritization (UK-focused)
+account_priority:
+  uk_system:
+    1: "emergency_fund"     # 6 months expenses first
+    2: "employer_pension"   # Up to employer match
+    3: "isa"               # Use full ISA allowance
+    4: "lisa"              # For house purchase/retirement
+    5: "sipp"              # Additional pension contributions
+    6: "gia"               # General investment account
+  
+  us_system:
+    1: "emergency_fund"     # 6 months expenses first
+    2: "401k_match"        # Up to employer match
+    3: "roth_ira"          # Tax-free growth
+    4: "traditional_401k"   # Additional 401k contributions
+    5: "taxable_account"    # General investment account
+  
+  uae_system:
+    1: "emergency_fund"     # 6 months expenses first
+    2: "offshore_pension"   # International pension
+    3: "taxable_account"    # General investment account
+
+# Investment contribution rules
+contribution_rules:
+  emergency_fund:
+    target_months: 6
+    priority: "highest"
+    allocation: "cash"  # Keep in high-yield savings
+  
+  regular_contributions:
+    percentage_of_income: 0.15  # 15% of gross income to investments
+    minimum_monthly: 500        # Minimum £500/month
+    maximum_monthly: 5000       # Maximum £5000/month
+  
+  bonus_allocation:
+    percentage_to_invest: 0.50  # 50% of bonuses to investments
+    percentage_to_emergency: 0.20  # 20% to emergency fund
+    percentage_to_lifestyle: 0.30  # 30% for lifestyle/discretionary
+
+# Rebalancing strategy
+rebalancing:
+  frequency: "quarterly"
+  threshold: 0.05  # Rebalance if allocation drifts >5% from target
+  method: "threshold_based"
+
+# Investment product selection (UK focus)
+products:
+  isa:
+    type: "stocks_and_shares_isa"
+    provider: "low_cost_platform"
+    annual_allowance: 20000
+    recommended_funds:
+      - "global_equity_tracker"
+      - "uk_equity_tracker"
+      - "bond_index_fund"
+  
+  lisa:
+    annual_allowance: 4000
+    government_bonus: 0.25  # 25% bonus
+    recommended_use: "house_purchase"
+  
+  sipp:
+    annual_allowance: 60000  # Subject to income limits
+    tax_relief: 0.20         # Basic rate tax relief
+    recommended_funds:
+      - "global_equity_tracker"
+      - "target_date_fund"
+
+# Risk management
+risk_management:
+  diversification:
+    geographic: ["uk", "us", "europe", "emerging_markets"]
+    sector: "broad_market_exposure"
+    asset_class: "multi_asset"
+  
+  volatility_management:
+    expected_annual_volatility: 0.12  # 12% standard deviation
+    maximum_drawdown_tolerance: 0.20  # 20% maximum acceptable loss
+  
+  stress_testing:
+    scenarios: ["market_crash", "inflation_spike", "recession"]
+
+# Expected returns (nominal)
+expected_returns:
+  equity: 0.07       # 7% annual return
+  bonds: 0.03        # 3% annual return
+  cash: 0.02         # 2% annual return
+  alternatives: 0.06  # 6% annual return
+  
+  # Blended expected return based on allocation
+  portfolio_expected_return: 0.065  # 6.5% blended return
+
+# Fees and costs
+cost_structure:
+  platform_fee: 0.0015      # 0.15% annual platform fee
+  fund_fees: 0.0020         # 0.20% average fund fees
+  trading_costs: 0.0005     # 0.05% trading costs
+  total_annual_cost: 0.0040 # 0.40% total cost
+
+# Validation rules
+validation:
+  min_allocation_percentage: 0.05  # Minimum 5% in any asset class
+  max_allocation_percentage: 0.80  # Maximum 80% in any asset class
+  total_allocation_check: 1.00     # Must sum to 100% 

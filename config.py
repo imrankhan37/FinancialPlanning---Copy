@@ -1,60 +1,32 @@
 """
 Financial Planning Configuration
-Contains all configuration parameters for the financial planning scenarios.
+Contains core configuration parameters for the financial planning scenarios.
+Note: Many parameters have been moved to the new schema-driven architecture.
 """
 
 CONFIG = {
-    # General Assumptions
+    # Core Planning Parameters - Still used by financial_planner_pydantic.py
     "start_year": 2025,
     "plan_duration_years": 10,
-    "inflation_rate": 0.025,  # Will be adjusted per year
-    "investment_return_rate": 0.065,  # Reduced from 7% to 6.5% for conservatism
-
-    # User Profile
     "start_age": 24,
-
-    # Liabilities
-    "student_loan_debt": 57000,  # Undergraduate Plan 2 student loan
-    "university_fee_payment": {  # Direct payments for current masters degree
-        "year": 1,
-        "amount": 16800,  # 3 payments of £5,600 each = £16,800 total
-        "payment_schedule": [5600, 5600, 5600]  # 3 equal payments in Year 1
-    },
-
-    # Expenses (Year 1 baseline)
-    "personal_expenses": {1: 6000, 2: 9000, "default": 12000},
-    "parental_support": {
-        "before_house": 12000,
-        "after_house": 12000,
-        "house_purchase_year": 5
-    },
-    "annual_travel": 3000,
-    "personal_rent": {
-        "start_year": 3,
-        "amount": 25200
-    },
-    "marriage_goal": {
-        "total_cost": 70000,
-        "start_year": 3,
-        "end_year": 4
-    },
-    "child_costs": {
-        "start_year": 7,
-        "one_off_cost": 8500,
-        "ongoing_annual_cost": 10000
+    
+    # Investment & Economic Parameters - Still used throughout system
+    "investment_return_rate": 0.065,  # Used in scenario_helpers.py and financial_planner_pydantic.py
+    
+    # Inflation Configuration - Still used by uk_tax.py and financial_planner_pydantic.py
+    "inflation_rate": 0.025,  # Base rate, used as fallback
+    "inflation_path": {
+        2025: 0.032,  # 3.2% for 2025
+        2026: 0.022,  # 2.2% for 2026
+        2027: 0.020,  # 2.0% thereafter
+        "default": 0.020
     },
     
-    # Major Goals
-    "parental_home_purchase": {
-        "target_year": 4, # Purchase takes place at the start of Year 5
-        "price_grows": [0.01, 0.04, 0.06, 0.06], # Savills forecast for 2025-2028
-        "base_price_2025": 600000,
-        "deposit_pct": 0.20,
-        "mortgage_rate": 0.0525,  # Updated from 4.5% to 5.25% based on market data
-        "mortgage_term_years": 25
-    },
-
-    # Tax & NI (2025/26 England)
+    # Student Loan - Still used by financial_planner_pydantic.py
+    "student_loan_debt": 57000,  # Initial debt amount
+    
+    # UK Tax Configuration - Still used by utils/tax/uk_tax.py
+    # Note: This will eventually be replaced by config/tax_systems/uk_income_tax_ni.yaml
     "tax_bands": {
         "personal_allowance": 12570,
         "basic_rate_limit": 50270,
@@ -75,8 +47,8 @@ CONFIG = {
         "main": 0.08,
         "upper": 0.02
     },
-
-    # Student Loan (Plan 2)
+    
+    # Student Loan Configuration - Still used by utils/tax/uk_tax.py
     "student_loan_plan2": {
         "threshold": 28470,
         "repayment_rate": 0.09,
@@ -85,60 +57,80 @@ CONFIG = {
         "interest_lower_income_threshold": 28470,
         "interest_upper_income_threshold": 51245
     },
-
-    # Investment Allowances
+    
+    # Investment Allowances - Still used by utils/tax/uk_tax.py
     "isa_allowance": 20000,
     "lisa_allowance": 4000,
     "lisa_bonus_rate": 0.25,
     "sipp_allowance": 60000,
     
-    # Inflation path (OBR-aligned)
-    "inflation_path": {
-        2025: 0.032,  # 3.2% for 2025
-        2026: 0.022,  # 2.2% for 2026
-        2027: 0.020,  # 2.0% thereafter
-        "default": 0.020
+    # Universal Life Events - Still used by utils/tax/tax_utils.py
+    # Note: These are duplicated in the new templates but still needed for backward compatibility
+    "university_fee_payment": {
+        "year": 1,
+        "amount": 16800,
+        "payment_schedule": [5600, 5600, 5600]
+    },
+    "marriage_goal": {
+        "total_cost": 70000,
+        "start_year": 3,
+        "end_year": 4
+    },
+    "child_costs": {
+        "start_year": 7,
+        "one_off_cost": 8500,
+        "ongoing_annual_cost": 10000
+    },
+    "personal_expenses": {1: 6000, 2: 9000, "default": 12000},
+    "parental_support": {
+        "before_house": 12000,
+        "after_house": 12000,
+        "house_purchase_year": 5
+    },
+    "annual_travel": 3000,
+    
+    # UK Housing Configuration - Still used by utils/scenario_helpers.py
+    # Note: This is duplicated in scenarios but needed for UK-only scenarios
+    "parental_home_purchase": {
+        "target_year": 4,  # Purchase takes place at the start of Year 5
+        "price_grows": [0.01, 0.04, 0.06, 0.06],  # Savills forecast for 2025-2028
+        "base_price_2025": 600000,
+        "deposit_pct": 0.20,
+        "mortgage_rate": 0.0525,
+        "mortgage_term_years": 25
     },
     
-    # Location-Specific Configurations
+    # Location-Specific Configurations - Still used by financial_planner_pydantic.py
     "location_configs": {
         "UK": {
             "name": "United Kingdom",
             "currency": "GBP",
             "exchange_rate": 1.0,
-            "rent_monthly": 2100,  # £2,100/month for 1-bedroom apartment
-            "healthcare_monthly": 0,  # NHS is free, private healthcare optional
-            "retirement_contribution": 0.05,  # 5% pension contribution
-            "general_expenses_monthly": 1500,  # £1,500/month
+            "rent_monthly": 2100,
+            "healthcare_monthly": 0,
+            "retirement_contribution": 0.05,
+            "general_expenses_monthly": 1500,
         }
     },
     
-    # International Scenarios Configuration
+    # International Scenarios Configuration - Still used by financial_planner_pydantic.py
     "international_scenarios": {
         "seattle": {
             "name": "Seattle, WA, USA",
             "currency": "USD",
-            "exchange_rate": 1.26,  # GBP/USD (conservative)
+            "exchange_rate": 1.26,
             "salary_progression": {
-                1: 100000,  # $180,000
-                2: 110000,  # $200,000
-                3: 120000,  # $220,000
-                4: 150000,  # $240,000
-                5: 180000,  # $260,000
-                6: 200000,  # $280,000
-                7: 200000,  # $300,000
-                8: 220000,  # $320,000
-                9: 220000,  # $340,000
-                10: 240000   # $360,000
+                1: 100000, 2: 110000, 3: 120000, 4: 150000, 5: 180000,
+                6: 200000, 7: 200000, 8: 220000, 9: 220000, 10: 240000
             },
             "bonus_rate": 0.1,
-            "rsu_rate": 0.25,  # 25% of salary as RSUs
-            "tax_system": "us_federal_state",  # Federal + WA State tax
-            "rent_monthly": 2200,  # $2,200/month for 1-bedroom apartment
-            "healthcare_monthly": 500,  # $500/month
-            "retirement_contribution": 0.06,  # 6% for 401k match
-            "general_expenses_monthly": 2000,  # $2,000/month
-            "relocation_cost": 11300,  # £11,300
+            "rsu_rate": 0.25,
+            "tax_system": "us_federal_state",
+            "rent_monthly": 2200,
+            "healthcare_monthly": 500,
+            "retirement_contribution": 0.06,
+            "general_expenses_monthly": 2000,
+            "relocation_cost": 11300,
             "housing_options": {
                 "uk_home": {
                     "purchase_year": 5,
@@ -150,10 +142,10 @@ CONFIG = {
                 },
                 "local_home": {
                     "purchase_year": 3,
-                    "price_usd": 750000,  # $750k Seattle home
+                    "price_usd": 750000,
                     "price_growth": [0.03, 0.04, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05],
                     "deposit_pct": 0.25,
-                    "mortgage_rate": 0.065,  # Higher US rates
+                    "mortgage_rate": 0.065,
                     "mortgage_term_years": 30
                 }
             }
@@ -163,24 +155,16 @@ CONFIG = {
             "currency": "USD",
             "exchange_rate": 1.26,
             "salary_progression": {
-                1: 100000,  # $200,000
-                2: 120000,  # $220,000
-                3: 130000,  # $240,000
-                4: 150000,  # $260,000
-                5: 180000,  # $280,000
-                6: 200000,  # $300,000
-                7: 200000,  # $320,000
-                8: 200000,  # $340,000
-                9: 230000,  # $360,000
-                10: 250000   # $380,000
+                1: 100000, 2: 120000, 3: 130000, 4: 150000, 5: 180000,
+                6: 200000, 7: 200000, 8: 200000, 9: 230000, 10: 250000
             },
             "bonus_rate": 0.15,
             "rsu_rate": 0.25,
-            "tax_system": "us_federal_state_city",  # Federal + NY State + NYC
-            "rent_monthly": 4000,  # $4,000/month for 1-bedroom apartment
+            "tax_system": "us_federal_state_city",
+            "rent_monthly": 4000,
             "healthcare_monthly": 500,
             "retirement_contribution": 0.06,
-            "general_expenses_monthly": 2500,  # $2,500/month
+            "general_expenses_monthly": 2500,
             "relocation_cost": 11300,
             "housing_options": {
                 "uk_home": {
@@ -193,7 +177,7 @@ CONFIG = {
                 },
                 "local_home": {
                     "purchase_year": 4,
-                    "price_usd": 1200000,  # $1.2M NYC home
+                    "price_usd": 1200000,
                     "price_growth": [0.04, 0.05, 0.06, 0.06, 0.06, 0.06, 0.06],
                     "deposit_pct": 0.20,
                     "mortgage_rate": 0.065,
@@ -206,24 +190,16 @@ CONFIG = {
             "currency": "USD",
             "exchange_rate": 1.26,
             "salary_progression": {
-                1: 90000,  # $115,000 (reduced from $150k)
-                2: 100000,  # $124,000
-                3: 110000,  # $134,000
-                4: 120000,  # $145,000
-                5: 150000,  # $157,000
-                6: 169000,  # $169,000
-                7: 183000,  # $183,000
-                8: 197000,  # $197,000
-                9: 213000,  # $213,000
-                10: 230000   # $230,000
+                1: 90000, 2: 100000, 3: 110000, 4: 120000, 5: 150000,
+                6: 169000, 7: 183000, 8: 197000, 9: 213000, 10: 230000
             },
             "bonus_rate": 0.10,
-            "rsu_rate": 0.10,  # Lower RSU component in Middle East
+            "rsu_rate": 0.10,
             "tax_system": "tax_free",
-            "rent_monthly": 2000,  # $2,000/month for 1-bedroom apartment
-            "healthcare_monthly": 200,  # $125/month (much cheaper)
-            "retirement_contribution": 0.0,  # No 401k equivalent
-            "general_expenses_monthly": 2000,  # $1,500/month
+            "rent_monthly": 2000,
+            "healthcare_monthly": 200,
+            "retirement_contribution": 0.0,
+            "general_expenses_monthly": 2000,
             "relocation_cost": 11800,
             "housing_options": {
                 "uk_home": {
@@ -236,23 +212,23 @@ CONFIG = {
                 },
                 "local_home": {
                     "purchase_year": 3,
-                    "price_usd": 520000,  # $400k Dubai home
+                    "price_usd": 520000,
                     "price_growth": [0.02, 0.03, 0.04, 0.04, 0.04, 0.04, 0.04, 0.04],
                     "deposit_pct": 0.20,
-                    "mortgage_rate": 0.045,  # Lower rates in UAE
+                    "mortgage_rate": 0.045,
                     "mortgage_term_years": 25
                 }
             }
         }
     },
     
-    # Delayed Relocation Scenarios
+    # Delayed Relocation Scenarios - Still used by test_all_scenarios.py
     "delayed_relocation": {
         "seattle_year4_uk_home": {
             "name": "Seattle (Move Year 4) - Buy UK Home",
             "uk_years": 3,
             "location": "seattle",
-            "salary_multiplier": 1.1,  # Slight premium for experience
+            "salary_multiplier": 1.1,
             "housing_strategy": "uk_home"
         },
         "seattle_year4_local_home": {
@@ -266,7 +242,7 @@ CONFIG = {
             "name": "Seattle (Move Year 5) - Buy UK Home",
             "uk_years": 4,
             "location": "seattle",
-            "salary_multiplier": 1.2,  # Higher premium for more experience
+            "salary_multiplier": 1.2,
             "housing_strategy": "uk_home"
         },
         "seattle_year5_local_home": {

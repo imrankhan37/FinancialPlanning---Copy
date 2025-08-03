@@ -1,0 +1,84 @@
+# System Defaults Configuration
+# Immutable system-wide constants and default values
+
+version: "3.0.0"
+metadata:
+  created: "2025-01-29"
+  description: "System-wide default values and constants"
+  
+# Economic Assumptions (Base Defaults)
+economics:
+  default_inflation_rate: 0.025
+  default_investment_return_rate: 0.065
+  default_plan_duration_years: 10
+  start_year: 2025
+
+# User Profile Defaults
+user_profile:
+  default_start_age: 24
+  default_student_loan_debt: 57000
+
+# Planning Constants
+planning:
+  min_plan_duration: 1
+  max_plan_duration: 50
+  min_age: 18
+  max_age: 100
+
+# Currency Configuration
+currencies:
+  base_currency: "GBP"
+  supported_currencies: ["GBP", "USD", "EUR", "AED"]
+  
+# Investment Constants
+investments:
+  default_isa_allowance: 20000
+  default_lisa_allowance: 4000
+  default_lisa_bonus_rate: 0.25
+  default_sipp_allowance: 60000
+
+# Validation Rules
+validation:
+  max_salary: 10000000  # 10M cap for validation
+  max_expense_ratio: 0.95  # Max 95% of income as expenses
+  min_savings_rate: 0.01  # Min 1% savings rate 
+
+# Template Engine Fallback Defaults
+fallbacks:
+  # Income defaults
+  income:
+    default_base_salary: 50000
+    default_salary_growth_rate: 0.03  # 3% annual growth
+    default_bonus_rate: 0.10  # 10% of salary
+    default_equity_rate: 0.05  # 5% of salary
+    
+  # Note: Tax calculations are handled exclusively by YAML tax systems
+  # No fallback tax defaults - proper tax system configuration is required
+    
+  # Housing defaults
+  housing:
+    default_monthly_rent: 1000
+    default_property_price: 600000
+    default_deposit_percentage: 0.20  # 20%
+    default_purchase_fees_pct: 0.05  # 5%
+    default_mortgage_rate: 0.05  # 5%
+    default_mortgage_term_years: 25
+    
+  # Expense defaults
+  expenses:
+    default_expense_percentage: 0.50  # 50% of net income
+    default_lifestyle_factor: 1.0
+    
+  # Investment defaults
+  investment:
+    default_investment_percentage: 0.15  # 15% of income
+    default_retirement_allocation: 0.60  # 60% to retirement
+    default_taxable_allocation: 0.40  # 40% to taxable
+    minimum_monthly_investment: 500
+    maximum_monthly_investment: 5000
+    
+  # Career stage thresholds
+  career_stages:
+    early_career_max_years: 5
+    mid_career_max_years: 15
+    # late_career is anything above mid_career_max_years 

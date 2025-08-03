@@ -1,0 +1,49 @@
+# Simple Array Override Example
+# Straightforward example of overriding salary progression with an array
+
+scenario:
+  id: "custom_salary_array_simple"
+  name: "Custom Salary Array - Simple"
+  description: "Override salary progression with exact values for each year"
+  version: "3.0.0"
+  tags: ["uk", "array_override", "example"]
+  phase: "uk_only"
+  jurisdiction: "UK"
+
+composition:
+  location_market: "uk"
+  
+  # Tax System
+  tax_system: "uk_income_tax_ni"
+  
+  salary_progression:
+    template: "conservative"           # Still inherit bonus/RSU patterns from template
+    override_type: "complete_array"    # Override salary with custom array
+    base_salary: 45000                # Not used since we have array
+    
+    # Exact salary for each of the 10 years
+    salary_array: [45000, 52000, 60000, 70000, 82000, 95000, 110000, 125000, 140000, 161000]
+    
+    # Optional: Also override bonus as array (otherwise uses template)
+    # bonus_array: [0.05, 0.08, 0.10, 0.12, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15]
+
+  expense_profile: "graduate"
+  
+  housing_strategy: "uk_home_purchase"
+  
+  investment_strategy: "balanced"
+
+planning:
+  start_year: 2025
+  duration_years: 10
+  start_age: 24
+  currency: "GBP"
+  inflation_rate: 0.025
+  investment_return_rate: 0.065
+  
+  # Initial state
+  initial_state:
+    student_loan_balance: 57000
+    initial_investments: 0
+    initial_property_value: 0
+    initial_mortgage: 0 

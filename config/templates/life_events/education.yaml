@@ -1,0 +1,81 @@
+template_type: "life_event"
+version: "1.0.0"
+metadata:
+  name: "Education Payments"
+  description: "University fee payments and education-related costs"
+  category: "financial_obligation"
+  author: "Financial Planning System"
+
+# Event configuration
+event:
+  type: "education_payment"
+  duration_type: "one_off"  # Single payment
+  priority: "high"
+  
+  # Default timing (can be overridden in scenario)
+  default_timing:
+    year: 1
+    
+  # Cost structure
+  costs:
+    primary_amount: 16800     # Default university fee payment
+    currency: "GBP"
+    
+    # Optional additional costs
+    additional_costs:
+      textbooks: 500
+      equipment: 300
+      graduation_expenses: 200
+  
+  # Payment schedule options
+  payment_options:
+    lump_sum:
+      timing: "start_of_year"
+      amount: 16800
+    
+    installments:
+      frequency: "quarterly"
+      payments: [4200, 4200, 4200, 4200]
+      timing: ["Q1", "Q2", "Q3", "Q4"]
+
+# Impact on finances
+financial_impact:
+  cash_flow:
+    immediate_outflow: 16800
+    ongoing_impact: "none"
+  
+  tax_implications:
+    tax_deductible: false
+    student_loan_interaction: true  # May affect student loan calculations
+  
+  investment_impact:
+    reduces_available_savings: true
+    priority_over_investments: true
+
+# Variations for different education scenarios
+variations:
+  uk_undergraduate:
+    amount: 16800
+    description: "UK university tuition fees"
+    typical_timing: 1
+  
+  uk_postgraduate:
+    amount: 25000
+    description: "UK postgraduate degree costs"
+    typical_timing: 3
+  
+  professional_certification:
+    amount: 5000
+    description: "Professional qualification costs"
+    typical_timing: 2
+  
+  international_education:
+    amount: 35000
+    description: "International education costs"
+    typical_timing: 4
+
+# Validation rules
+validation:
+  min_amount: 1000
+  max_amount: 100000
+  valid_years: [1, 2, 3, 4, 5]  # Typically early career 

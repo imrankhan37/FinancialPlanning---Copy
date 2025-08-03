@@ -1,6 +1,7 @@
 # Tax Free Configuration (Dubai)
 # No income tax system
 
+tax_system_id: "tax_free"
 tax_system:
   id: "tax_free"
   name: "Tax Free"

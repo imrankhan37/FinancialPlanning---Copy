@@ -1,0 +1,22 @@
+template_type: "housing_strategy"
+version: "1.0.0"
+metadata:
+  name: "US Local Home Purchase Strategy"
+  description: "Rent initially, purchase US property in specified year"
+  suitable_for: ["us"]
+  author: "Financial Planning System"
+
+strategy: "buy"
+
+# Rental costs for pre-purchase years
+rental:
+  monthly_cost: 2200
+
+# Purchase configuration  
+purchase:
+  target_year: 3
+  property_price: 750000
+  deposit_percentage: 0.25
+  mortgage_rate: 0.065
+  mortgage_term_years: 30
+  purchase_fees_pct: 0.03 

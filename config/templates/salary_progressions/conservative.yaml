@@ -1,0 +1,51 @@
+template_type: "salary_progression"
+version: "1.0.0"
+metadata:
+  name: "Conservative Career Growth"
+  description: "Steady salary progression with original UK scenario values"
+  suitable_for: ["uk", "us"]
+  author: "Financial Planning System"
+
+progression:
+  type: "explicit_array"
+  base_salary: 45000
+  
+  # Exact salary progression from original UK scenario A
+  salary_by_year: [45000, 52000, 60000, 70000, 80000, 92000, 106000, 122000, 140000, 161000]
+  
+  # Fallback for years beyond array
+  fallback:
+    type: "percentage_growth"
+    growth_rate: 0.075  # 7.5% annual growth for years beyond array
+
+bonus:
+  type: "percentage_of_salary"
+  
+  # Progressive bonus rates from original UK scenario A  
+  rates_by_year: [0.05, 0.08, 0.10, 0.12, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15]
+  
+  # Fallback for years beyond array
+  fallback_rate: 0.15
+
+equity:
+  type: "percentage_of_salary"
+  
+  # Progressive RSU rates from original UK scenario A
+  rates_by_year: [0.15, 0.18, 0.20, 0.25, 0.30, 0.30, 0.30, 0.30, 0.30, 0.30]
+  
+  # Special events
+  events:
+    - year: 4
+      type: "ipo_multiplier"
+      multiplier: 2.0
+      description: "IPO event doubles RSU value"
+  
+  # Fallback for years beyond array
+  fallback_rate: 0.30
+
+# Validation rules
+validation:
+  min_salary: 20000
+  max_salary: 500000
+  max_bonus_rate: 0.50
+  max_equity_rate: 0.50 

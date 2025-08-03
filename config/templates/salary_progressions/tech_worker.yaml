@@ -1,0 +1,89 @@
+template_type: "salary_progression"
+version: "1.0.0"
+metadata:
+  name: "Tech Worker Career Growth"
+  description: "Aggressive salary progression typical of tech industry"
+  suitable_for: ["uk", "us", "uae"]
+  author: "Financial Planning System"
+
+progression:
+  type: "percentage_growth"
+  base_salary: 60000
+  
+  # Aggressive tech industry growth pattern
+  growth_by_year:
+    1: 0.08    # 8% first year
+    2: 0.12    # 12% second year (promotion)
+    3: 0.15    # 15% third year (senior promotion)
+    4: 0.10    # 10% steady growth
+    5: 0.08    # 8% continued growth
+    6-10: 0.07 # 7% senior level growth
+  
+  # Alternative: can specify ranges
+  # growth_ranges:
+  #   1-2: 0.10     # 10% initial years
+  #   3-5: 0.12     # 12% mid-career
+  #   6+: 0.08      # 8% senior years
+
+bonus:
+  type: "percentage_of_salary"
+  
+  # Tech industry bonus structure
+  base_rate: 0.15        # 15% base bonus
+  performance_multiplier: 1.2  # Can be 120% of base for high performance
+  
+  # Year-specific rates
+  rates_by_year:
+    1-2: 0.10    # 10% initial years
+    3-5: 0.15    # 15% mid-career
+    6+: 0.20     # 20% senior level
+
+equity:
+  type: "percentage_of_salary"
+  
+  # Tech industry equity structure - higher than conservative
+  base_rate: 0.25       # 25% base RSU grant
+  
+  rates_by_year:
+    1: 0.20      # 20% first year (new hire package)
+    2: 0.25      # 25% second year (full package)
+    3: 0.30      # 30% promotion year
+    4: 0.35      # 35% senior level
+    5+: 0.40     # 40% senior/staff level
+  
+  # Equity events common in tech
+  events:
+    - year: 3
+      type: "promotion_grant"
+      additional_percentage: 0.10
+      description: "Promotion to senior level"
+    
+    - year: 4
+      type: "ipo_multiplier"
+      multiplier: 3.0
+      description: "IPO event triples RSU value"
+    
+    - year: 6
+      type: "refresh_grant"
+      additional_percentage: 0.15
+      description: "Retention refresh grant"
+
+# Advanced: Performance-based adjustments
+performance_adjustments:
+  enabled: true
+  high_performer:
+    salary_multiplier: 1.15   # 15% salary boost
+    bonus_multiplier: 1.5     # 50% bonus boost
+    equity_multiplier: 1.3    # 30% equity boost
+  
+  low_performer:
+    salary_multiplier: 0.98   # 2% salary reduction
+    bonus_multiplier: 0.5     # 50% bonus reduction
+    equity_multiplier: 0.7    # 30% equity reduction
+
+# Validation rules - more aggressive limits for tech
+validation:
+  min_salary: 40000
+  max_salary: 800000      # Higher ceiling for tech
+  max_bonus_rate: 0.75    # Tech can have very high bonuses
+  max_equity_rate: 1.0    # 100% equity grants possible in tech 

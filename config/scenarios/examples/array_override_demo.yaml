@@ -1,0 +1,99 @@
+# Array Override Demo Scenario
+# Practical example of using array-based salary progression overrides
+
+scenario:
+  id: "startup_to_faang_transition"
+  name: "Startup to FAANG Transition"
+  description: "Career progression from startup equity focus to big tech cash focus"
+  version: "3.0.0"
+  tags: ["tech", "startup", "faang", "array_override"]
+  phase: "international_only"
+  jurisdiction: "US"
+
+composition:
+  location_market: "us_washington"   # Seattle market
+  
+  # Tax System
+  tax_system: "us_federal"
+  
+  salary_progression:
+    template: "conservative"           # Use conservative template as base
+    override_type: "complete_array"    # Override entire progression with custom array
+    base_salary: 85000                # Starting salary at startup
+    
+    # Complete 10-year salary progression array
+    # Years 1-4: Startup (lower cash, higher equity)
+    # Years 5-10: FAANG (higher cash, lower equity)
+    salary_array: [
+      85000,   # Year 1: Startup base
+      92000,   # Year 2: Small raise
+      105000,  # Year 3: Promotion to senior
+      125000,  # Year 4: Staff engineer
+      220000,  # Year 5: FAANG L5 (big jump)
+      240000,  # Year 6: FAANG L5 progression
+      280000,  # Year 7: FAANG L6 promotion
+      320000,  # Year 8: L6 progression
+      380000,  # Year 9: L7 promotion
+      420000   # Year 10: Senior staff
+    ]
+    
+    # Bonus progression (different pattern)
+    bonus_array: [
+      0.03,    # Year 1-4: Minimal startup bonus
+      0.03,
+      0.05,
+      0.08,
+      0.15,    # Year 5-10: Strong FAANG bonus
+      0.18,
+      0.20,
+      0.22,
+      0.25,
+      0.28
+    ]
+    
+    # RSU progression (equity focus shifts)
+    rsu_array: [
+      0.45,    # Year 1-4: High startup equity
+      0.50,
+      0.55,
+      0.60,
+      0.25,    # Year 5-10: Lower but valuable FAANG equity
+      0.25,
+      0.30,
+      0.30,
+      0.35,
+      0.35
+    ]
+    
+    # Additional event-based adjustments on top of array
+    event_overrides:
+      year_5: 
+        reason: "FAANG transition"
+        # Array value: $220k, but add signing bonus
+        signing_bonus_one_time: 50000
+      
+      year_7:
+        reason: "promotion_to_L6"
+        # Additional stock refresh grant
+        rsu_refresh_grant: 0.10
+
+  expense_profile: "graduate"
+  
+  housing_strategy: "us_local_home_purchase"
+  
+  investment_strategy: "balanced"
+
+planning:
+  start_year: 2025
+  duration_years: 10
+  start_age: 24
+  currency: "USD"
+  inflation_rate: 0.03          # Higher inflation assumption for this unique career path
+  investment_return_rate: 0.065
+  
+  # Initial state
+  initial_state:
+    student_loan_balance: 57000
+    initial_investments: 0
+    initial_property_value: 0
+    initial_mortgage: 0 

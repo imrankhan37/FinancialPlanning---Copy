@@ -14,6 +14,18 @@ from .uae_tax import calculate_uae_tax
 from models.unified_financial_data import TaxExpenses, CurrencyValue, Currency
 from models.unified_helpers import optimize_currency_value_creation
 
+# Import YAML support for enhanced tax calculations
+from pathlib import Path
+config_dir = Path(__file__).parent.parent.parent / "config"
+if str(config_dir) not in sys.path:
+    sys.path.insert(0, str(config_dir))
+
+try:
+    from yaml_loader import try_load_tax_system
+    YAML_TAX_SUPPORT = True
+except ImportError:
+    YAML_TAX_SUPPORT = False
+
 
 def calculate_tax_for_location(
     gross_income: float,
@@ -248,4 +260,181 @@ def calculate_universal_goals(plan_year: int, config: Dict[str, Any], inf_multip
     travel = config["annual_travel"] * inf_multiplier
     expenses["travel"] = travel
     
-    return expenses 
+    return expenses
+
+
+# ===== WEEK 3: YAML TAX CALCULATION FUNCTIONS =====
+
+def calculate_yaml_tax_for_location(
+    gross_income: float,
+    tax_system_id: str,
+    year: int,
+    loan_balance: float = 0.0
+) -> Dict[str, float]:
+    """
+    Calculate tax using YAML tax system configuration.
+    
+    Args:
+        gross_income: Annual gross income in GBP
+        tax_system_id: YAML tax system identifier (e.g., 'uk_income_tax_ni')
+        year: Tax year
+        loan_balance: Student loan balance (for UK)
+    
+    Returns:
+        Dictionary with tax breakdown: {
+            'income_tax': float,
+            'social_security': float,
+            'student_loan': float,
+            'total_tax': float
+        }
+    """
+    
+    if not YAML_TAX_SUPPORT:
+        raise ValueError("YAML tax support not available")
+    
+    # Load YAML tax configuration
+    tax_config = try_load_tax_system(tax_system_id)
+    if not tax_config:
+        raise ValueError(f"Could not load tax system: {tax_system_id}")
+    
+    # Route to appropriate calculation based on tax system
+    if tax_system_id == 'uk_income_tax_ni':
+        return calculate_uk_tax_from_yaml(gross_income, tax_config, year, loan_balance)
+    elif tax_system_id.startswith('us_'):
+        return calculate_us_tax_from_yaml(gross_income, tax_config, year)
+    elif tax_system_id == 'tax_free':
+        return calculate_tax_free_from_yaml(gross_income, tax_config, year)
+    else:
+        raise ValueError(f"Unsupported tax system: {tax_system_id}")
+
+
+def calculate_uk_tax_from_yaml(gross_income: float, tax_config: Dict[str, Any], year: int, loan_balance: float = 0.0) -> Dict[str, float]:
+    """Calculate UK taxes using YAML configuration."""
+    
+    # Extract configuration
+    income_tax_config = tax_config.get('income_tax', {})
+    ni_config = tax_config.get('national_insurance', {})
+    student_loan_config = tax_config.get('student_loan', {})
+    
+    bands = income_tax_config.get('bands', {})
+    rates = income_tax_config.get('rates', {})
+    ni_bands = ni_config.get('bands', {})
+    ni_rates = ni_config.get('rates', {})
+    
+    # Adjust thresholds for inflation if needed
+    threshold_freeze_until = bands.get('threshold_freeze_until', 2028)
+    if year >= threshold_freeze_until:
+        # For now, use static thresholds - inflation adjustment can be added later
+        pass
+    
+    # Personal Allowance with taper
+    pa = bands.get('personal_allowance', 12570)
+    pa_taper_threshold = bands.get('pa_taper_threshold', 100000)
+    
+    if gross_income > pa_taper_threshold:
+        taper_amount = (gross_income - pa_taper_threshold) / 2
+        pa = max(0, pa - taper_amount)
+    
+    # Calculate Income Tax
+    taxable_income = max(0, gross_income - pa)
+    income_tax = 0
+    
+    basic_rate_limit = bands.get('basic_rate_limit', 50270)
+    higher_rate_limit = bands.get('higher_rate_limit', 125140)
+    
+    basic_rate = rates.get('basic', 0.20)
+    higher_rate = rates.get('higher', 0.40)
+    additional_rate = rates.get('additional', 0.45)
+    
+    if taxable_income > 0:
+        # Additional rate band
+        if taxable_income > higher_rate_limit - pa:
+            income_tax += (taxable_income - (higher_rate_limit - pa)) * additional_rate
+            taxable_income = higher_rate_limit - pa
+        
+        # Higher rate band
+        if taxable_income > basic_rate_limit - pa:
+            income_tax += (taxable_income - (basic_rate_limit - pa)) * higher_rate
+            taxable_income = basic_rate_limit - pa
+        
+        # Basic rate band
+        income_tax += taxable_income * basic_rate
+    
+    # Calculate National Insurance
+    primary_threshold = ni_bands.get('primary_threshold', 12570)
+    upper_earnings_limit = ni_bands.get('upper_earnings_limit', 50270)
+    main_rate = ni_rates.get('main', 0.08)
+    upper_rate = ni_rates.get('upper', 0.02)
+    
+    national_insurance = 0
+    if gross_income > primary_threshold:
+        # Main rate band
+        niable_income_main = min(gross_income, upper_earnings_limit) - primary_threshold
+        national_insurance += max(0, niable_income_main) * main_rate
+        
+        # Upper rate band
+        if gross_income > upper_earnings_limit:
+            niable_income_upper = gross_income - upper_earnings_limit
+            national_insurance += niable_income_upper * upper_rate
+    
+    # Calculate Student Loan (if applicable)
+    student_loan = 0
+    if loan_balance > 0 and student_loan_config:
+        threshold = student_loan_config.get('threshold', 28470)
+        repayment_rate = student_loan_config.get('repayment_rate', 0.09)
+        
+        if gross_income > threshold:
+            student_loan = (gross_income - threshold) * repayment_rate
+            student_loan = min(student_loan, loan_balance)  # Can't repay more than balance
+    
+    total_tax = income_tax + national_insurance + student_loan
+    
+    return {
+        'income_tax': income_tax,
+        'social_security': national_insurance,
+        'student_loan': student_loan,
+        'total_tax': total_tax
+    }
+
+
+def calculate_us_tax_from_yaml(gross_income: float, tax_config: Dict[str, Any], year: int) -> Dict[str, float]:
+    """Calculate US taxes using YAML configuration."""
+    
+    # For now, use a simplified US calculation
+    # This can be enhanced later with full federal + state calculations
+    
+    federal_config = tax_config.get('federal', {})
+    state_config = tax_config.get('state', {})
+    
+    # Federal tax (simplified)
+    federal_rate = federal_config.get('effective_rate', 0.22)  # Default 22%
+    federal_tax = gross_income * federal_rate
+    
+    # State tax
+    state_rate = state_config.get('rate', 0.0)  # Default 0% (e.g., Washington)
+    state_tax = gross_income * state_rate
+    
+    # FICA (Social Security + Medicare)
+    fica_rate = 0.0765  # 7.65% total (6.2% SS + 1.45% Medicare)
+    fica_tax = gross_income * fica_rate
+    
+    total_tax = federal_tax + state_tax + fica_tax
+    
+    return {
+        'income_tax': federal_tax + state_tax,
+        'social_security': fica_tax,
+        'student_loan': 0,
+        'total_tax': total_tax
+    }
+
+
+def calculate_tax_free_from_yaml(gross_income: float, tax_config: Dict[str, Any], year: int) -> Dict[str, float]:
+    """Calculate taxes for tax-free jurisdictions using YAML configuration."""
+    
+    # Tax-free jurisdictions like UAE
+    return {
+        'income_tax': 0,
+        'social_security': 0,
+        'student_loan': 0,
+        'total_tax': 0
+    } 

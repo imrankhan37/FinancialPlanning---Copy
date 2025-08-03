@@ -1,6 +1,7 @@
 # US Federal Tax Configuration (Base)
 # 2025 tax year rates and brackets
 
+tax_system_id: "us_federal"
 tax_system:
   id: "us_federal"
   name: "US Federal Tax"

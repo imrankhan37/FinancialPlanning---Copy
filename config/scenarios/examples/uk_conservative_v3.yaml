@@ -1,0 +1,50 @@
+# UK Conservative Scenario - Version 3.0
+# Example of the new composition-based architecture
+
+scenario:
+  id: "uk_conservative_v3"
+  name: "UK Conservative Growth Scenario"
+  description: "Conservative UK career path with steady growth and home purchase"
+  version: "3.0.0"
+  tags: ["uk", "conservative", "tech", "homeowner"]
+  phase: "uk_only"
+  jurisdiction: "UK"
+
+composition:
+  # Location Market
+  location_market: "uk"              # References config/markets/locations/uk.yaml
+  
+  # Tax System
+  tax_system: "uk_income_tax_ni"     # References config/tax_systems/uk_income_tax_ni.yaml
+  
+  # Salary Progression
+  salary_progression:
+    template: "conservative"         # References config/templates/salary_progressions/conservative.yaml
+    base_salary: 45000
+    overrides:                       # Override template for specific years
+      year_4: { salary: 70000 }     # Promotion adjustment
+  
+  # Expense Profile
+  expense_profile: "graduate"        # References config/templates/expense_profiles/graduate.yaml
+  
+  # Housing Strategy
+  housing_strategy: "uk_home_purchase"  # References config/templates/housing_strategies/uk_home_purchase.yaml
+  
+  # Investment Strategy
+  investment_strategy: "balanced"    # References config/templates/investment_strategies/balanced.yaml
+
+# Planning Parameters
+planning:
+  start_year: 2025
+  duration_years: 10
+  start_age: 24
+  currency: "GBP"
+  inflation_rate: 0.025
+  investment_return_rate: 0.065
+  
+  # Initial state
+  initial_state:
+    student_loan_balance: 57000
+    initial_investments: 0
+    initial_property_value: 0
+    initial_mortgage: 0 

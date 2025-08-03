@@ -1,105 +1,58 @@
-# Dubai Tech Graduate - Complete Financial Plan
-# Tax-free Dubai tech graduate progression
+# Dubai Tech Graduate - Version 3.0
+# Dubai tech graduate with aggressive progression using composition-based architecture
 
 scenario:
   id: "dubai_tech_graduate"
-  name: "Dubai Tech Graduate"
-  description: "Standard Dubai tech graduate progression"
-  version: "2.0.0"
-  created: "2025-01-29"
+  name: "Dubai Tech Graduate - Aggressive Growth"
+  description: "Dubai tech graduate with aggressive salary progression and local home focus"
+  version: "3.0.0"
+  tags: ["international", "dubai", "tech", "aggressive", "local_home"]
+  phase: "international_only"
+  jurisdiction: "UAE"
 
-location:
-  name: "Dubai, UAE"
-  currency: "USD"
-  exchange_rate: 1.26
-  tax_system: "tax_free"
-
-income:
-  base_salary: 90000
-  progression:
-    type: "yearly_overrides"
-    rates:
-      1: { salary: 90000, bonus: 0.08, rsu: 0.08 }
-      2: { salary: 103500, bonus: 0.10, rsu: 0.10 }
-      3: { salary: 119000, bonus: 0.10, rsu: 0.10 }
-      4: { salary: 137000, bonus: 0.10, rsu: 0.10 }
-      5: { salary: 157000, bonus: 0.10, rsu: 0.10 }
-      6: { salary: 181000, bonus: 0.10, rsu: 0.10 }
-      7: { salary: 208000, bonus: 0.10, rsu: 0.10 }
-      8: { salary: 239000, bonus: 0.10, rsu: 0.10 }
-      9: { salary: 275000, bonus: 0.10, rsu: 0.10 }
-      10: { salary: 316000, bonus: 0.10, rsu: 0.10 }
+composition:
+  # Location Market
+  location_market: "uae_dubai"       # References config/markets/locations/uae_dubai.yaml
   
-  rsu_config:
-    vesting_schedule: "4_year_cliff"
-    ipo_multiplier: 2.0
+  # Tax System
+  tax_system: "tax_free"             # References config/tax_systems/tax_free.yaml
+  
+  # Salary Progression - Aggressive tech progression (different from standard Dubai)
+  salary_progression:
+    template: "tech_worker"          # Use tech worker template as base
+    override_type: "complete_array"  # Override entire progression with exact values
+    base_salary: 90000
+    
+    # Exact salary progression - aggressive tech graduate pattern from config.py
+    salary_array: [90000, 103500, 119000, 137000, 157000, 181000, 208000, 239000, 275000, 316000]
+    
+    # Exact bonus progression - aggressive tech graduate pattern
+    bonus_array: [0.08, 0.10, 0.10, 0.10, 0.10, 0.10, 0.10, 0.10, 0.10, 0.10]
+    
+    # Exact RSU progression - aggressive tech graduate pattern
+    rsu_array: [0.08, 0.10, 0.10, 0.10, 0.10, 0.10, 0.10, 0.10, 0.10, 0.10]
+  
+  # Expense Profile
+  expense_profile: "graduate"        # References config/templates/expense_profiles/graduate.yaml
+  
+  # Housing Strategy
+  housing_strategy: "uae_local_home_purchase"  # References config/templates/housing_strategies/uae_local_home_purchase.yaml
+  
+  # Investment Strategy
+  investment_strategy: "balanced"    # References config/templates/investment_strategies/balanced.yaml
 
-expenses:
-  # Location-specific expenses
-  location_expenses:
-    rent:
-      monthly: 2000
-      currency: "USD"
-    healthcare:
-      monthly: 200
-      currency: "USD"
-    general_expenses:
-      monthly: 2000
-      currency: "USD"
-    retirement_contribution:
-      percentage: 0.0  # No 401k equivalent
-
-  # Universal goal-based expenses
-  goals:
-    university_fees:
-      year: 1
-      amount: 16800
-      payment_schedule: [5600, 5600, 5600]
-      currency: "GBP"
-    
-    marriage:
-      total_cost: 70000
-      start_year: 3
-      end_year: 4
-      currency: "GBP"
-    
-    child_costs:
-      start_year: 7
-      one_off_cost: 8500
-      ongoing_annual_cost: 10000
-      currency: "GBP"
-    
-    personal_expenses:
-      year_1: 6000
-      year_2: 9000
-      default: 12000
-      currency: "GBP"
-    
-    parental_support:
-      before_house: 12000
-      after_house: 12000
-      house_purchase_year: 5
-      currency: "GBP"
-    
-    travel:
-      annual: 3000
-      currency: "GBP"
-    
-    housing:
-      strategy: "local_home"
-      purchase_year: 3
-      base_price: 520000
-      price_growth: [0.02, 0.03, 0.04, 0.04, 0.04, 0.04, 0.04, 0.04]
-      deposit_pct: 0.20
-      mortgage_rate: 0.045
-      mortgage_term_years: 25
-      currency: "USD"
-
-assumptions:
-  start_year: 2025
-  plan_duration_years: 10
-  inflation_rate: 0.025
-  investment_return_rate: 0.065
-  start_age: 24
-  student_loan_debt: 57000
-  relocation_cost: 11800 
+# Planning Parameters - From config.py
+planning:
+  start_year: 2025                  # From config.py start_year
+  duration_years: 10                # From config.py plan_duration_years  
+  start_age: 24                     # From config.py start_age
+  currency: "USD"
+  inflation_rate: 0.025             # From config.py inflation_rate
+  investment_return_rate: 0.065     # From config.py investment_return_rate
+  
+  # Initial state
+  initial_state:
+    student_loan_balance: 57000     # From config.py student_loan_debt
+    initial_investments: 0
+    initial_property_value: 0
+    initial_mortgage: 0 

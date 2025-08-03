@@ -346,21 +346,7 @@ def optimize_currency_value_creation(value: float, currency: Currency,
         performance_monitor.end_timer('currency_conversion')
 
 
-def optimize_scenario_analysis(scenarios: List[Any], 
-                             analysis_func: Callable) -> Dict[str, Any]:
-    """Optimize scenario analysis with performance monitoring."""
-    performance_monitor.start_timer('scenario_analysis')
-    
-    try:
-        # Track access pattern
-        data_optimizer.track_access_pattern('scenario_analysis')
-        
-        # Perform analysis
-        result = analysis_func(scenarios)
-        
-        return result
-    finally:
-        performance_monitor.end_timer('scenario_analysis')
+# REMOVED: optimize_scenario_analysis - was never used in the codebase
 
 
 def get_performance_summary() -> Dict[str, Any]:

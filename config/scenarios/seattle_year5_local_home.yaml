@@ -1,142 +1,119 @@
-# Seattle Year 5 Local Home - Complete Financial Plan
-# Move to Seattle in Year 5, buy local home
+# Seattle Year 5 Local Home - Version 3.0
+# Multi-phase scenario: UK for 4 years, then Seattle with local home purchase
 
 scenario:
   id: "seattle_year5_local_home"
-  name: "Seattle (Move Year 5) - Buy Local Home"
-  description: "Stay in UK for 4 years, then move to Seattle and buy local home"
-  version: "2.0.0"
-  created: "2025-01-29"
+  name: "Delayed Relocation: Seattle Year 5 - Local Home"
+  description: "Work in UK for 4 years, relocate to Seattle in year 5, buy local Seattle home"
+  version: "3.0.0"
+  tags: ["multi_phase", "delayed_relocation", "seattle", "local_home"]
 
-phases:
-  uk_phase:
-    location:
-      name: "United Kingdom"
-      currency: "GBP"
-      exchange_rate: 1.0
-      tax_system: "uk_income_tax_ni"
-    duration: 4
-    income:
-      base_salary: 45000
-      progression:
-        type: "yearly_overrides"
-        rates:
-          1: { salary: 45000, bonus: 0.05, rsu: 0.15 }
-          2: { salary: 52000, bonus: 0.08, rsu: 0.18 }
-          3: { salary: 60000, bonus: 0.10, rsu: 0.20 }
-          4: { salary: 70000, bonus: 0.12, rsu: 0.25 }
-      rsu_config:
-        vesting_schedule: "4_year_cliff"
-        ipo_multiplier: 2.0
-    expenses:
-      location_expenses:
-        rent:
-          monthly: 2100
-          currency: "GBP"
-        healthcare:
-          monthly: 0
-          currency: "GBP"
-        general_expenses:
-          monthly: 1500
-          currency: "GBP"
-        retirement_contribution:
-          percentage: 0.05
-      goals:
-        university_fees:
+composition:
+  # Multi-phase career progression
+  phases:
+    # Phase 1: UK Years (Years 1-4)
+    uk_phase:
+      duration: 4
+      location:
+        market: "uk"                 # References config/markets/locations/uk.yaml
+      
+      salary_progression:
+        template: "conservative"     # Use conservative UK progression
+        override_type: "complete_array"
+        base_salary: 45000
+        
+        # UK phase salary progression (Years 1-4)
+        salary_array: [45000, 52000, 60000, 70000]
+        bonus_array: [0.05, 0.08, 0.10, 0.12]
+        rsu_array: [0.15, 0.18, 0.20, 0.25]
+      
+      expense_profile:
+        template: "graduate"
+        location_overrides:
+          rent: { monthly: 2100 }
+          healthcare: { monthly: 0 }
+          general_expenses: { monthly: 1500 }
+          retirement_contribution: { percentage: 0.05 }
+      
+      life_events:
+        - template: "education"
           year: 1
           amount: 16800
           payment_schedule: [5600, 5600, 5600]
-          currency: "GBP"
-        marriage:
-          total_cost: 70000
+        
+        - template: "marriage"
           start_year: 3
           end_year: 4
-          currency: "GBP"
-        personal_expenses:
-          year_1: 6000
-          year_2: 9000
-          default: 12000
-          currency: "GBP"
-        parental_support:
-          before_house: 12000
-          after_house: 12000
-          house_purchase_year: 5
-          currency: "GBP"
-        travel:
-          annual: 3000
-          currency: "GBP"
-  seattle_phase:
-    location:
-      name: "Seattle, WA, USA"
-      currency: "USD"
-      exchange_rate: 1.26
-      tax_system: "us_washington"
-    duration: 6
-    income:
-      base_salary: 120000  # 20% premium for experience (salary_multiplier: 1.2)
-      progression:
-        type: "yearly_overrides"
-        rates:
-          5: { salary: 120000, bonus: 0.10, rsu: 0.25 }
-          6: { salary: 132000, bonus: 0.10, rsu: 0.25 }
-          7: { salary: 144000, bonus: 0.10, rsu: 0.25 }
-          8: { salary: 180000, bonus: 0.10, rsu: 0.25 }
-          9: { salary: 216000, bonus: 0.10, rsu: 0.25 }
-          10: { salary: 240000, bonus: 0.10, rsu: 0.25 }
-      rsu_config:
-        vesting_schedule: "4_year_cliff"
-        ipo_multiplier: 3.0
-    expenses:
-      location_expenses:
-        rent:
-          monthly: 2200
-          currency: "USD"
-        healthcare:
-          monthly: 500
-          currency: "USD"
-        general_expenses:
-          monthly: 2000
-          currency: "USD"
-        retirement_contribution:
-          percentage: 0.06
-      goals:
-        marriage:
           total_cost: 70000
-          start_year: 3
-          end_year: 4
-          currency: "GBP"
-        child_costs:
+    
+    # Phase 2: Seattle Years (Years 5-10)
+    seattle_phase:
+      duration: 6
+      location:
+        market: "us_washington"      # References config/markets/locations/us_washington.yaml
+      
+      salary_progression:
+        template: "tech_worker"      # US tech progression
+        override_type: "complete_array"
+        base_salary: 120000          # 20% premium for UK experience (salary_multiplier: 1.2)
+        
+        # Seattle phase salary progression (Years 5-10) - with 1.2x multiplier
+        salary_array: [120000, 132000, 144000, 180000, 216000, 240000]
+        bonus_array: [0.10, 0.10, 0.10, 0.10, 0.10, 0.10]
+        rsu_array: [0.25, 0.25, 0.25, 0.25, 0.25, 0.25]
+      
+      expense_profile:
+        template: "graduate"
+        location_overrides:
+          rent: { monthly: 2200 }
+          healthcare: { monthly: 500 }
+          general_expenses: { monthly: 2000 }
+          retirement_contribution: { percentage: 0.06 }
+      
+      life_events:
+        - template: "children"
           start_year: 7
           one_off_cost: 8500
           ongoing_annual_cost: 10000
-          currency: "GBP"
-        personal_expenses:
-          year_1: 6000
-          year_2: 9000
-          default: 12000
-          currency: "GBP"
-        parental_support:
-          before_house: 12000
-          after_house: 12000
-          house_purchase_year: 5
-          currency: "GBP"
-        travel:
-          annual: 3000
-          currency: "GBP"
-        housing:
-          strategy: "local_home"
-          purchase_year: 3
-          base_price: 750000
-          price_growth: [0.03, 0.04, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05]
-          deposit_pct: 0.25
-          mortgage_rate: 0.065
-          mortgage_term_years: 30
-          currency: "USD"
+  
+  # Housing Strategy - Local Home Purchase in Seattle
+  housing:
+    strategy: "local_home"           # Buy local home in Seattle
+    purchase_year: 3                 # Purchase during Seattle phase (relative to seattle phase start = year 7 overall)
+    purchase_price: 750000           # From config.py international_scenarios.seattle.housing_options.local_home.price_usd
+    deposit_percentage: 0.25         # From config.py international_scenarios.seattle.housing_options.local_home.deposit_pct
+    mortgage_rate: 0.065            # From config.py international_scenarios.seattle.housing_options.local_home.mortgage_rate
+    mortgage_term_years: 30         # From config.py international_scenarios.seattle.housing_options.local_home.mortgage_term_years
+    price_growth: [0.03, 0.04, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05]  # From config.py international_scenarios.seattle.housing_options.local_home.price_growth
+
+# Planning Assumptions - From config.py
 assumptions:
   start_year: 2025
   plan_duration_years: 10
-  inflation_rate: 0.025
-  investment_return_rate: 0.065
   start_age: 24
   student_loan_debt: 57000
-  relocation_cost: 11300 
+  inflation_rate: 0.025
+  investment_return_rate: 0.065
+  
+  # Phase transition details
+  relocation:
+    year: 5                          # Move to Seattle in year 5
+    cost: 11300                      # From config.py international_scenarios.seattle.relocation_cost
+    salary_multiplier: 1.2           # From config.py delayed_relocation.seattle_year5_local_home.salary_multiplier
+  
+  # Currency considerations
+  exchange_rate: 1.26               # GBP/USD rate
+  
+  # Additional expense details from config.py
+  personal_expenses:
+    year_1: 6000
+    year_2: 9000
+    default: 12000
+  
+  parental_support:
+    before_house: 12000
+    after_house: 12000
+    house_purchase_year: 5
+  
+  travel:
+    annual: 3000 

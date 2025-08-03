@@ -1,0 +1,100 @@
+# Salary Progression Override Examples
+# Demonstrates flexible override patterns for salary progressions
+
+# Example 1: Complete Array Override
+array_override_example:
+  scenario_id: "custom_salary_array"
+  description: "Override entire salary progression with custom array"
+  
+  composition:
+    salary_progression:
+      template: "conservative"           # Still uses template for bonus/RSU patterns
+      override_type: "complete_array"    # Override the entire salary progression
+      base_salary: 45000                # Starting salary
+      
+      # Complete salary array for 10 years
+      salary_array: [45000, 52000, 60000, 70000, 82000, 95000, 110000, 125000, 140000, 161000]
+      
+      # Optional: Override bonus/RSU arrays too
+      bonus_array: [0.05, 0.08, 0.10, 0.12, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15]
+      rsu_array: [0.15, 0.18, 0.20, 0.25, 0.30, 0.30, 0.30, 0.30, 0.30, 0.30]
+
+# Example 2: Partial Array Override (Years 1-5 only)
+partial_array_example:
+  scenario_id: "partial_override"
+  description: "Override specific years, template handles the rest"
+  
+  composition:
+    salary_progression:
+      template: "conservative"
+      override_type: "partial_array"
+      base_salary: 45000
+      
+      # Override only years 1-5, template handles years 6-10
+      salary_overrides:
+        years: [1, 2, 3, 4, 5]
+        values: [45000, 55000, 70000, 90000, 120000]  # Custom progression for first 5 years
+
+# Example 3: Specific Year Overrides (Current Style)
+year_specific_example:
+  scenario_id: "year_specific"
+  description: "Override specific years individually"
+  
+  composition:
+    salary_progression:
+      template: "conservative"
+      base_salary: 45000
+      
+      overrides:
+        year_3: { salary: 65000, bonus: 0.12 }    # Promotion in year 3
+        year_5: { salary: 95000, bonus: 0.15 }    # Senior promotion in year 5
+        year_7: { salary: 130000 }                # Management role
+
+# Example 4: Growth Rate Override
+growth_rate_example:
+  scenario_id: "custom_growth"
+  description: "Override growth rates instead of absolute values"
+  
+  composition:
+    salary_progression:
+      template: "conservative"
+      base_salary: 45000
+      
+      # Override growth rates with custom pattern
+      growth_overrides:
+        type: "custom_rates"
+        rates: [0.15, 0.12, 0.10, 0.08, 0.06, 0.05, 0.05, 0.05, 0.05, 0.05]  # Decreasing growth
+
+# Example 5: Mixed Override (Array + Individual)
+mixed_override_example:
+  scenario_id: "mixed_override"
+  description: "Combine array overrides with individual year adjustments"
+  
+  composition:
+    salary_progression:
+      template: "conservative"
+      base_salary: 45000
+      
+      # Base array for most years
+      salary_array: [45000, 52000, 60000, 70000, 80000, 90000, 100000, 110000, 120000, 130000]
+      
+      # Then specific overrides for special events
+      event_overrides:
+        year_4: { salary: 85000, reason: "promotion" }        # Override year 4 from array
+        year_7: { salary: 125000, reason: "management" }      # Override year 7 from array
+
+# Example 6: External Data Source
+external_data_example:
+  scenario_id: "external_data"
+  description: "Load salary progression from external source"
+  
+  composition:
+    salary_progression:
+      template: "conservative"
+      override_type: "external_source"
+      
+      # Load from external file or API
+      data_source:
+        type: "csv_file"
+        path: "data/custom_salary_progression.csv"
+        columns: ["year", "salary", "bonus", "rsu"] 

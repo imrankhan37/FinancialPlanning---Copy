@@ -1,0 +1,118 @@
+template_type: "life_event"
+version: "1.0.0"
+metadata:
+  name: "Marriage and Wedding"
+  description: "Wedding costs and marriage-related financial events"
+  category: "major_life_event"
+  author: "Financial Planning System"
+
+# Event configuration
+event:
+  type: "marriage_wedding"
+  duration_type: "multi_year"  # Costs spread over planning period
+  priority: "high"
+  
+  # Default timing (can be overridden in scenario)
+  default_timing:
+    start_year: 3
+    end_year: 4
+    peak_year: 4  # Year of actual wedding
+    
+  # Cost structure
+  costs:
+    total_wedding_cost: 70000  # Default total wedding cost
+    currency: "GBP"
+    
+    # Cost breakdown by category
+    cost_breakdown:
+      venue_catering: 28000     # 40% - Venue and food
+      photography_video: 7000   # 10% - Documentation
+      attire_beauty: 3500       # 5% - Dress, suit, makeup, etc.
+      flowers_decoration: 5250  # 7.5% - Flowers and decor
+      music_entertainment: 3500 # 5% - DJ/band/entertainment
+      transport: 2100           # 3% - Cars, transport
+      rings: 7000               # 10% - Wedding rings and jewelry
+      honeymoon: 10500          # 15% - Honeymoon expenses
+      miscellaneous: 3150       # 4.5% - Other costs
+  
+  # Payment schedule over planning period
+  payment_schedule:
+    start_year: 3
+    costs_by_year:
+      year_3: 10500  # 15% - Early deposits and planning
+      year_4: 59500  # 85% - Majority of costs in wedding year
+
+# Impact on finances
+financial_impact:
+  cash_flow:
+    total_outflow: 70000
+    spread_over_years: 2
+    peak_impact_year: 4
+  
+  savings_impact:
+    requires_dedicated_savings: true
+    recommended_savings_start: 2  # Start saving 2 years before
+    monthly_savings_needed: 2917  # £70k / 24 months
+  
+  investment_impact:
+    may_reduce_investments: true
+    priority_over_discretionary_investments: true
+    emergency_fund_interaction: "preserve"  # Don't use emergency fund
+
+# Wedding style variations
+variations:
+  modest_wedding:
+    total_cost: 35000
+    description: "Modest wedding with close family and friends"
+    guest_count: 50
+  
+  traditional_wedding:
+    total_cost: 70000
+    description: "Traditional wedding with extended family and friends"
+    guest_count: 100
+  
+  luxury_wedding:
+    total_cost: 120000
+    description: "Luxury wedding with premium venue and services"
+    guest_count: 150
+  
+  destination_wedding:
+    total_cost: 85000
+    description: "Destination wedding including travel costs"
+    guest_count: 75
+    additional_costs:
+      travel_accommodation: 15000
+      guest_travel_support: 5000
+
+# Location-specific adjustments
+location_multipliers:
+  uk_london: 1.3        # 30% higher in London
+  uk_regional: 1.0      # Base cost for UK regions
+  us_major_city: 1.4    # 40% higher in US major cities
+  us_regional: 1.1      # 10% higher in US regions
+  uae_dubai: 1.2        # 20% higher in Dubai
+
+# Financial planning considerations
+planning_considerations:
+  savings_strategy:
+    dedicated_wedding_account: true
+    high_yield_savings: true  # Low risk for short-term goal
+    avoid_risky_investments: true
+  
+  budgeting_tips:
+    percentage_of_annual_income: 0.5  # Aim for 50% of annual income max
+    emergency_fund_protection: true
+    debt_avoidance: true
+  
+  post_wedding_financial_changes:
+    joint_finances: true
+    updated_insurance_needs: true
+    potential_tax_benefits: true
+    revised_investment_strategy: true
+
+# Validation rules
+validation:
+  min_total_cost: 10000
+  max_total_cost: 200000
+  valid_start_years: [2, 3, 4, 5, 6]
+  max_duration_years: 3 

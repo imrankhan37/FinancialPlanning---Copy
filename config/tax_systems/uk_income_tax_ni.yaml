@@ -1,6 +1,7 @@
 # UK Income Tax + National Insurance Configuration
 # 2025/26 tax year rates and bands
 
+tax_system_id: "uk_income_tax_ni"
 tax_system:
   id: "uk_income_tax_ni"
   name: "UK Income Tax + National Insurance"

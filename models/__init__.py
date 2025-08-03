@@ -3,7 +3,7 @@ Models package for financial planning dashboard.
 Contains Pydantic models for financial data structures.
 """
 
-# Unified models
+# Unified models - ALL USED
 from .unified_financial_data import (
     UnifiedFinancialData,
     UnifiedFinancialScenario,
@@ -24,13 +24,13 @@ from .unified_financial_data import (
     OtherExpenses,
     RetirementInvestments,
     TaxableInvestments,
-    HousingInvestments
+    HousingInvestments,
+    PhaseConfig,
+    ResolvedScenarioConfig
 )
 
-# Unified helpers
+# Unified helpers - ONLY USED FUNCTIONS
 from .unified_helpers import (
-    create_scenario_metadata_from_name,
-    create_unified_currency_value,
     create_unified_income_breakdown,
     create_unified_expense_breakdown,
     create_unified_tax_breakdown,
@@ -40,17 +40,9 @@ from .unified_helpers import (
     clear_performance_caches
 )
 
-# Performance optimizations
+# Performance optimizations - ONLY USED FUNCTIONS
 from .performance_optimizations import (
-    CurrencyConversionCache,
-    CacheStrategy,
-    CacheEntry,
-    DataAccessOptimizer,
-    PerformanceMonitor,
-    cached_currency_conversion,
-    optimized_currency_conversion,
     optimize_currency_value_creation,
-    optimize_scenario_analysis,
     get_performance_summary,
     clear_all_caches
 )
@@ -77,10 +69,10 @@ __all__ = [
     'RetirementInvestments',
     'TaxableInvestments',
     'HousingInvestments',
+    'PhaseConfig',
+    'ResolvedScenarioConfig',
     
-    # Unified helpers
-    'create_scenario_metadata_from_name',
-    'create_unified_currency_value',
+    # Unified helpers - only used functions
     'create_unified_income_breakdown',
     'create_unified_expense_breakdown',
     'create_unified_tax_breakdown',
@@ -89,16 +81,8 @@ __all__ = [
     'get_performance_metrics',
     'clear_performance_caches',
     
-    # Performance optimizations
-    'CurrencyConversionCache',
-    'CacheStrategy',
-    'CacheEntry',
-    'DataAccessOptimizer',
-    'PerformanceMonitor',
-    'cached_currency_conversion',
-    'optimized_currency_conversion',
+    # Performance optimizations - only used functions
     'optimize_currency_value_creation',
-    'optimize_scenario_analysis',
     'get_performance_summary',
     'clear_all_caches'
 ] 
