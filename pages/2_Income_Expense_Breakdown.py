@@ -338,7 +338,7 @@ def render_expense_breakdown_analysis(scenarios: Dict[str, UnifiedFinancialScena
             # Expense composition analysis
             col1, col2 = st.columns(2)
 
-        with col1:
+            with col1:
                 # Expense composition pie chart for latest year
                 latest_year = df['Year'].max()
                 latest_data = df[df['Year'] == latest_year]
@@ -356,7 +356,7 @@ def render_expense_breakdown_analysis(scenarios: Dict[str, UnifiedFinancialScena
                 )
                 st.plotly_chart(fig, use_container_width=True)
 
-        with col2:
+            with col2:
                 # Housing costs by template
                 housing_by_template = df.groupby(['Housing Template', 'Year'])['Housing'].mean().reset_index()
 
@@ -507,11 +507,11 @@ def render_tax_analysis(scenarios: Dict[str, UnifiedFinancialScenario],
 
             with col2:
                 # Tax burden over time
-        fig = px.line(
-            df,
-            x='Year',
+                fig = px.line(
+                    df,
+                    x='Year',
                     y='Total Tax',
-            color='Scenario',
+                    color='Scenario',
                     title='Tax Burden Over Time',
                     labels={'Total Tax': 'Total Tax (£)'},
                     hover_data=['Tax System', 'Effective Tax Rate']
@@ -553,7 +553,7 @@ def render_tax_analysis(scenarios: Dict[str, UnifiedFinancialScenario],
                         st.markdown(f"• Average Effective Rate: {avg_rate:.1f}%")
                         st.markdown(f"• Total Tax Burden: £{total_tax:,.0f}")
                     st.markdown("---")
-            else:
+        else:
             st.warning("No tax data available for analysis.")
 
     except Exception as e:
